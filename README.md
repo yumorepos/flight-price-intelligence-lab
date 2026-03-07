@@ -8,14 +8,15 @@
 |---------|-------------|------|
 | [**Polymarket Autopilot**](https://github.com/yumorepos/polymarket-autopilot) | Algorithmic paper trading engine — 10 quant strategies, backtesting, automated reports | Python, async I/O, SQLite, pytest |
 | [**Montreal Housing Analysis**](https://github.com/yumorepos/montreal-housing-analysis) | Rental market data analysis with statistical modeling & visualizations | Python, pandas, seaborn, matplotlib |
+| [**Job Hunter**](https://github.com/yumorepos/job-hunter) | Automated job scraper — async multi-source scraping, SQLite dedup, markdown digests | Python, httpx, SQLite, Click, Rich |
 | [**Portfolio**](https://yumorepos.github.io) | Developer portfolio with resume download | HTML/CSS/JS |
 
 ## 📊 By the Numbers
 
-- **3,600+** lines of production Python
+- **5,700+** lines of production Python across 3 projects
 - **10** quantitative trading strategies
 - **45** automated tests passing
-- **CI/CD** via GitHub Actions
+- **CI/CD** via GitHub Actions on every repo
 - **Docker** containerized
 
 ## 🛠️ Stack
