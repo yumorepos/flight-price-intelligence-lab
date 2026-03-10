@@ -24,6 +24,10 @@
 
 `Python` `SQL` `JavaScript` `Bash` · `pandas` `NumPy` `Streamlit` `Plotly` `SQLite` · `Git` `Docker` `GitHub Actions` `REST APIs` · `pytest` `mypy` `ruff`
 
+## 📝 Writing
+
+- [**How I Built a Quantitative Trading Bot as a Self-Taught Developer**](https://www.linkedin.com/feed/update/urn:li:activity:7436191286480498688/) — My journey from travel agent to building a 3,600-line algorithmic trading engine
+
 ## 📫 Let's Connect
 
 🌐 [yumorepos.github.io](https://yumorepos.github.io) · 💼 [LinkedIn](https://linkedin.com/in/yumo-xu-1589b7326) · 📄 [Resume](https://yumorepos.github.io/Yumo-Xu-Resume.pdf)
