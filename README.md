@@ -48,16 +48,6 @@ Core analytics marts are implemented, including a first-pass heuristic `route_sc
 
 ## Local setup (only for what exists today)
 
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-App runs at `http://localhost:3000`.
-
 ### Backend
 
 ```bash
@@ -65,8 +55,20 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+cp .env.example .env
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+App runs at `http://localhost:3000`. By default the frontend calls `/api/*`, and Next.js rewrites those requests to `BACKEND_URL` (default `http://127.0.0.1:8000`) to avoid browser CORS issues in local development.
 
 Example endpoints:
 
