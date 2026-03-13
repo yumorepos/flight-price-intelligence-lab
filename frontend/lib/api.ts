@@ -86,10 +86,21 @@ export type AirportContextResponse = {
   metadata: DataProvenance;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+
+function withApiHint(detail: string): string {
+  return `${detail} Verify the backend is running and reachable (default: http://localhost:8000).`;
+}
 
 async function apiFetch<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`);
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`);
+  } catch {
+    throw new Error(withApiHint("Unable to reach the API service."));
+  }
+
   if (!response.ok) {
     const fallbackError = `Request failed (${response.status})`;
     let detail = fallbackError;
@@ -101,7 +112,7 @@ async function apiFetch<T>(path: string): Promise<T> {
       detail = fallbackError;
     }
 
-    throw new Error(detail);
+    throw new Error(withApiHint(detail));
   }
 
   return (await response.json()) as T;
