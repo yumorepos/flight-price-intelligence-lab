@@ -4,84 +4,236 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900 antialiased;
+  }
+  
+  h1 {
+    @apply text-4xl font-bold tracking-tight;
+  }
+  
+  h2 {
+    @apply text-2xl font-semibold;
+  }
+  
+  h3 {
+    @apply text-lg font-semibold;
   }
 }
 
 @layer components {
+  /* Layout */
   .page-shell {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
   }
 
+  /* Hero Section */
   .hero {
-    @apply text-center mb-12;
+    @apply text-center mb-12 py-12 px-6 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-2xl shadow-xl;
+  }
+  
+  .hero h1 {
+    @apply text-5xl font-extrabold mb-4 drop-shadow-lg;
+  }
+  
+  .hero p {
+    @apply text-lg text-blue-50 max-w-3xl mx-auto;
   }
 
   .eyebrow {
-    @apply text-sm font-semibold text-primary-600 uppercase tracking-wide mb-2;
+    @apply text-sm font-bold text-blue-200 uppercase tracking-wider mb-3 inline-block px-4 py-1 bg-blue-800/30 rounded-full;
   }
 
+  /* Panels */
   .panel {
-    @apply bg-white rounded-lg shadow-md p-6 mb-8;
+    @apply bg-white rounded-2xl shadow-lg p-8 mb-8 border border-gray-100;
   }
 
   .panel-header {
-    @apply mb-6 border-b border-gray-200 pb-4;
+    @apply mb-6 border-b-2 border-gray-200 pb-4;
+  }
+  
+  .panel-header h2 {
+    @apply text-gray-900;
   }
 
+  /* Grids */
   .metrics-grid {
-    @apply grid grid-cols-1 md:grid-cols-3 gap-6;
+    @apply grid grid-cols-1 md:grid-cols-3 gap-8;
+  }
+  
+  .metrics-grid article {
+    @apply p-6 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-200 hover:shadow-md;
+  }
+  
+  .metrics-grid h3 {
+    @apply text-blue-700 mb-2 flex items-center gap-2;
   }
 
   .route-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6;
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8;
   }
 
+  /* Route Cards */
+  .route-card {
+    @apply bg-white rounded-xl shadow-md p-6 border border-gray-200 hover:shadow-xl hover:border-blue-400 transition-all duration-300 flex flex-col gap-4;
+  }
+  
+  .route-card-top {
+    @apply flex justify-between items-start gap-4;
+  }
+  
+  .route-card h3 {
+    @apply text-xl font-bold text-gray-900;
+  }
+  
+  .route-card p {
+    @apply text-sm text-gray-600;
+  }
+
+  /* Score Pills */
+  .score-pill {
+    @apply inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md;
+  }
+
+  /* Deal Pills */
+  .deal-pill {
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide;
+  }
+  
+  .deal-strong_deal {
+    @apply bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-sm;
+  }
+  
+  .deal-deal {
+    @apply bg-gradient-to-r from-green-400 to-green-500 text-white shadow-sm;
+  }
+  
+  .deal-neutral {
+    @apply bg-gradient-to-r from-gray-400 to-gray-500 text-white shadow-sm;
+  }
+  
+  .deal-expensive {
+    @apply bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm;
+  }
+
+  /* Data Lists */
+  .route-card dl {
+    @apply grid grid-cols-2 gap-4 text-sm;
+  }
+  
+  .route-card dt {
+    @apply text-gray-600 font-medium col-span-2 md:col-span-1;
+  }
+  
+  .route-card dd {
+    @apply text-gray-900 font-semibold col-span-2 md:col-span-1;
+  }
+
+  /* Links */
+  .details-link {
+    @apply mt-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-800 transition-all duration-200 shadow-md hover:shadow-lg;
+  }
+  
+  .card-footnote {
+    @apply text-xs text-gray-500 italic border-t border-gray-100 pt-3;
+  }
+
+  /* Status Messages */
   .status {
-    @apply text-center py-8 text-gray-600;
+    @apply text-center py-12 px-6 rounded-xl text-gray-600 bg-gray-50 border-2 border-dashed border-gray-300;
   }
 
   .status.error {
-    @apply text-danger-600 bg-danger-50 rounded-lg p-4;
+    @apply text-red-700 bg-red-50 border-red-300;
   }
 
   .muted {
-    @apply text-gray-600 text-sm;
+    @apply text-gray-600 text-sm leading-relaxed;
   }
 
+  /* Buttons */
   .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-colors duration-200;
+    @apply px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg inline-flex items-center gap-2;
   }
 
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700;
+    @apply bg-gradient-to-r from-blue-600 to-indigo-700 text-white hover:from-blue-700 hover:to-indigo-800;
   }
 
   .btn-secondary {
-    @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+    @apply bg-white text-gray-700 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50;
   }
 
+  /* Cards */
   .card {
-    @apply bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200;
+    @apply bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300 border border-gray-100;
   }
 
+  /* Badges */
   .badge {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide;
   }
 
   .badge-success {
-    @apply bg-success-50 text-success-700;
+    @apply bg-green-100 text-green-700 ring-1 ring-green-200;
   }
 
   .badge-warning {
-    @apply bg-warning-50 text-warning-700;
+    @apply bg-yellow-100 text-yellow-700 ring-1 ring-yellow-200;
   }
 
   .badge-danger {
-    @apply bg-danger-50 text-danger-700;
+    @apply bg-red-100 text-red-700 ring-1 ring-red-200;
   }
 
   .badge-neutral {
-    @apply bg-gray-100 text-gray-700;
+    @apply bg-gray-100 text-gray-700 ring-1 ring-gray-200;
+  }
+
+  /* Search Panel */
+  .search-panel {
+    @apply bg-white rounded-2xl shadow-xl p-8 border border-gray-100;
+  }
+  
+  .search-input {
+    @apply w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200;
+  }
+  
+  .search-button {
+    @apply px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-800 transition-all duration-200 shadow-lg hover:shadow-xl;
+  }
+
+  /* Airport Grid */
+  .airport-grid {
+    @apply grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6;
+  }
+  
+  .airport-button {
+    @apply p-4 text-left bg-white border-2 border-gray-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-semibold;
+  }
+  
+  .airport-button.selected {
+    @apply border-blue-600 bg-blue-50 ring-4 ring-blue-100;
+  }
+
+  /* Loading States */
+  .loading-pulse {
+    @apply animate-pulse bg-gray-200 rounded;
+  }
+
+  /* Smooth Animations */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
