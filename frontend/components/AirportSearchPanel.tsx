@@ -32,7 +32,7 @@ export function AirportSearchPanel({
   return (
     <section className="search-panel mb-8">
       <div className="flex items-center gap-3 mb-4">
-        <Plane className="w-8 h-8 text-blue-600" />
+        <Plane className="w-8 h-8 text-orange-600" />
         <h2 className="text-2xl font-bold text-gray-900">Select Origin Airport</h2>
       </div>
       <p className="muted mb-6">Search by IATA code, city name, or airport. Then select an airport to explore routes.</p>
@@ -66,7 +66,7 @@ export function AirportSearchPanel({
               type="button"
               onClick={() => onSelectOrigin(airport.iata)}
             >
-              <div className="text-2xl font-bold text-blue-600 mb-1">{airport.iata}</div>
+              <div className="text-2xl font-bold text-orange-600 mb-1">{airport.iata}</div>
               <div className="text-sm font-semibold text-gray-900 truncate">{airport.airport_name}</div>
               <div className="text-xs text-gray-500 mt-1">{formatLocation(airport.city, airport.state, airport.country)}</div>
             </button>
