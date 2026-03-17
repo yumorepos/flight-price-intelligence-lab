@@ -1,0 +1,85 @@
+name: Data Refresh
+
+on:
+  schedule:
+    # Run every Sunday at 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      force_refresh:
+        description: 'Force full data refresh'
+        required: false
+        default: 'false'
+
+jobs:
+  refresh-data:
+    name: Refresh Aviation Data
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy requests python-dotenv
+      
+      - name: Run data ingestion
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FORCE_REFRESH: ${{ github.event.inputs.force_refresh }}
+        run: |
+          echo "Starting data refresh..."
+          python scripts/ingest_bts_db1b.py
+          python scripts/ingest_bts_ontime.py
+          python scripts/ingest_faa_enplanements.py
+      
+      - name: Build analytics marts
+        run: |
+          echo "Building analytics marts..."
+          python scripts/build_monthly_fares.py
+          python scripts/build_ontime_stats.py
+          python scripts/build_route_scores.py
+      
+      - name: Load to database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "Loading data to database..."
+          python scripts/load_postgres.py
+      
+      - name: Create refresh report
+        run: |
+          echo "# Data Refresh Report" > refresh-report.md
+          echo "**Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> refresh-report.md
+          echo "**Status:** Success" >> refresh-report.md
+          echo "" >> refresh-report.md
+          echo "## Files Updated" >> refresh-report.md
+          ls -lh data/marts/ >> refresh-report.md
+      
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-refresh-report
+          path: refresh-report.md
+          retention-days: 30
+      
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Data Refresh Failed',
+              body: `Data refresh workflow failed on ${new Date().toISOString()}\n\nCheck the workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['automation', 'bug']
+            })
