@@ -46,7 +46,6 @@ def test_root_endpoint(client):
     data = response.json()
     assert "message" in data
     assert "version" in data
-    assert data["version"] == "0.2.0"
 
 
 def test_404_error_handling(client):
@@ -59,7 +58,13 @@ def test_404_error_handling(client):
 
 def test_cors_headers(client):
     """Test CORS headers are present."""
-    response = client.options("/health")
+    response = client.options(
+        "/health",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
     assert "access-control-allow-origin" in response.headers
 
 

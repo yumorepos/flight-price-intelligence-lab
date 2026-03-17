@@ -88,18 +88,17 @@ def create_app() -> FastAPI:
     app.include_router(routes_router)
     app.include_router(meta_router)
 
+    @app.get("/")
+    async def root():
+        """Root endpoint."""
+        return {
+            "message": "Flight Price Intelligence API",
+            "version": "0.2.0",
+            "docs": "/docs",
+            "health": "/health",
+        }
+
     return app
 
 
 app = create_app()
-
-
-@app.get("/")
-async def root():
-    """Root endpoint."""
-    return {
-        "message": "Flight Price Intelligence API",
-        "version": "0.2.0",
-        "docs": "/docs",
-        "health": "/health",
-    }

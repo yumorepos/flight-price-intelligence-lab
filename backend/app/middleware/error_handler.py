@@ -2,21 +2,18 @@
 
 import logging
 import traceback
-from typing import Callable
 
-from fastapi import Request, Response, status
+from fastapi import Request, status
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
 
 
-class ErrorHandlerMiddleware:
+class ErrorHandlerMiddleware(BaseHTTPMiddleware):
     """Middleware to handle all unhandled exceptions."""
 
-    def __init__(self, app):
-        self.app = app
-
-    async def __call__(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next):
         try:
             return await call_next(request)
         except Exception as exc:
@@ -24,7 +21,7 @@ class ErrorHandlerMiddleware:
 
     async def handle_exception(self, request: Request, exc: Exception) -> JSONResponse:
         """Handle exception and return appropriate JSON response."""
-        
+
         # Log the full exception with traceback
         logger.error(
             f"Unhandled exception: {exc}",
@@ -66,7 +63,7 @@ async def validation_exception_handler(request: Request, exc: Exception) -> JSON
         f"Validation error: {exc}",
         extra={"path": request.url.path, "method": request.method},
     )
-    
+
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={

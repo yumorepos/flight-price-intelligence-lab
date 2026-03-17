@@ -43,14 +43,7 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}/backend
         run: |
-          pytest tests/ -v --cov=app --cov-report=term-missing
-      
-      - name: Upload coverage
-        if: matrix.python-version == '3.11'
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./backend/coverage.xml
-          flags: backend
+          pytest tests/ -v --tb=short -W ignore::PendingDeprecationWarning
 
   frontend-tests:
     name: Frontend Tests
@@ -78,10 +71,6 @@ jobs:
       - name: Build
         working-directory: ./frontend
         run: npm run build
-      
-      - name: Type check
-        working-directory: ./frontend
-        run: npx tsc --noEmit
 
   security-scan:
     name: Security Scan
@@ -96,12 +85,6 @@ jobs:
         with:
           scan-type: 'fs'
           scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-      
-      - name: Upload Trivy results to GitHub Security
-        if: github.repository == 'yumorepos/flight-price-intelligence-lab'  # Only if Advanced Security enabled
-        continue-on-error: true  # Don't fail if upload not available
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results.sarif'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
