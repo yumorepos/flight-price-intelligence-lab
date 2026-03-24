@@ -7,6 +7,18 @@ This repository runs as a split deployment:
 
 ---
 
+## 0) Data-readiness truth (must read)
+
+**Deployment success does not imply data readiness.**
+
+- Backend can be live and still return empty intelligence payloads when marts are not loaded.
+- In CSV fallback mode, `/health/readiness` returns `503` if required marts are missing/empty.
+- A deploy is only **data-ready** after either:
+  - Postgres is configured and populated, or
+  - CSV marts are present under `data/marts/` with expected files.
+
+---
+
 ## 1) Backend deployment (Render recommended)
 
 ### Service settings
