@@ -24,7 +24,8 @@ This project is **MVP+ portfolio-grade**, not production-hardened.
 
 - **Price Intelligence** (flagship): route scoring, deal signal, fare/reliability context
 - **Airport Intelligence**: airport context and outbound route cues
-- **Route Network**: hub-to-destination discovery surface (currently mock-backed)
+- **Airline Intelligence**: carrier footprint + route score/reliability overview
+- **Route Network**: geospatial route visualization from current route data
 - **Seasonality**: monthly fare pattern interpretation surface
 - **Learn**: methodology, caveats, and source coverage notes
 

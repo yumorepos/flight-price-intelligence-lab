@@ -3,6 +3,7 @@ import Link from "next/link";
 const NAV_ITEMS = [
   { href: "/", label: "Price Intelligence" },
   { href: "/airports", label: "Airport Intelligence" },
+  { href: "/airlines", label: "Airline Intelligence" },
   { href: "/network", label: "Route Network" },
   { href: "/seasonality", label: "Seasonality" },
   { href: "/learn", label: "Learn" },

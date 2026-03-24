@@ -10,6 +10,7 @@ export type DemoRouteRecord = {
   ontime_rate: number;
   cancellation_rate: number;
   confidence: "high" | "medium" | "low";
+  dominant_carrier: string;
   fare_history: Array<{ year: number; month: number; avg_fare_usd: number }>;
 };
 
@@ -26,6 +27,7 @@ export const DEMO_ROUTES: DemoRouteRecord[] = [
     ontime_rate: 0.87,
     cancellation_rate: 0.02,
     confidence: "high",
+    dominant_carrier: "AA",
     fare_history: [
       { year: 2025, month: 9, avg_fare_usd: 338 },
       { year: 2025, month: 10, avg_fare_usd: 325 },
@@ -46,6 +48,7 @@ export const DEMO_ROUTES: DemoRouteRecord[] = [
     ontime_rate: 0.89,
     cancellation_rate: 0.01,
     confidence: "high",
+    dominant_carrier: "DL",
     fare_history: [
       { year: 2025, month: 9, avg_fare_usd: 324 },
       { year: 2025, month: 10, avg_fare_usd: 316 },
@@ -66,6 +69,7 @@ export const DEMO_ROUTES: DemoRouteRecord[] = [
     ontime_rate: 0.91,
     cancellation_rate: 0.01,
     confidence: "high",
+    dominant_carrier: "B6",
     fare_history: [
       { year: 2025, month: 9, avg_fare_usd: 222 },
       { year: 2025, month: 10, avg_fare_usd: 218 },
@@ -86,6 +90,7 @@ export const DEMO_ROUTES: DemoRouteRecord[] = [
     ontime_rate: 0.86,
     cancellation_rate: 0.02,
     confidence: "medium",
+    dominant_carrier: "UA",
     fare_history: [
       { year: 2025, month: 9, avg_fare_usd: 330 },
       { year: 2025, month: 10, avg_fare_usd: 324 },
@@ -106,6 +111,7 @@ export const DEMO_ROUTES: DemoRouteRecord[] = [
     ontime_rate: 0.92,
     cancellation_rate: 0.01,
     confidence: "high",
+    dominant_carrier: "AS",
     fare_history: [
       { year: 2025, month: 9, avg_fare_usd: 166 },
       { year: 2025, month: 10, avg_fare_usd: 158 },
@@ -117,14 +123,22 @@ export const DEMO_ROUTES: DemoRouteRecord[] = [
 ];
 
 export const DEMO_AIRPORTS = [
-  { iata: "JFK", airport_name: "John F Kennedy Intl", city: "New York", state: "NY", country: "USA", enplanements: 31200000 },
-  { iata: "LAX", airport_name: "Los Angeles Intl", city: "Los Angeles", state: "CA", country: "USA", enplanements: 35900000 },
-  { iata: "ORD", airport_name: "Chicago O'Hare Intl", city: "Chicago", state: "IL", country: "USA", enplanements: 33500000 },
-  { iata: "DFW", airport_name: "Dallas Fort Worth Intl", city: "Dallas", state: "TX", country: "USA", enplanements: 40700000 },
-  { iata: "ATL", airport_name: "Hartsfield Jackson Atlanta Intl", city: "Atlanta", state: "GA", country: "USA", enplanements: 47400000 },
-  { iata: "SFO", airport_name: "San Francisco Intl", city: "San Francisco", state: "CA", country: "USA", enplanements: 25800000 },
-  { iata: "MIA", airport_name: "Miami Intl", city: "Miami", state: "FL", country: "USA", enplanements: 21400000 },
-  { iata: "SEA", airport_name: "Seattle Tacoma Intl", city: "Seattle", state: "WA", country: "USA", enplanements: 23200000 },
+  { iata: "JFK", airport_name: "John F Kennedy Intl", city: "New York", state: "NY", country: "USA", enplanements: 31200000, lat: 40.6413, lon: -73.7781 },
+  { iata: "LAX", airport_name: "Los Angeles Intl", city: "Los Angeles", state: "CA", country: "USA", enplanements: 35900000, lat: 33.9416, lon: -118.4085 },
+  { iata: "ORD", airport_name: "Chicago O'Hare Intl", city: "Chicago", state: "IL", country: "USA", enplanements: 33500000, lat: 41.9742, lon: -87.9073 },
+  { iata: "DFW", airport_name: "Dallas Fort Worth Intl", city: "Dallas", state: "TX", country: "USA", enplanements: 40700000, lat: 32.8998, lon: -97.0403 },
+  { iata: "ATL", airport_name: "Hartsfield Jackson Atlanta Intl", city: "Atlanta", state: "GA", country: "USA", enplanements: 47400000, lat: 33.6407, lon: -84.4277 },
+  { iata: "SFO", airport_name: "San Francisco Intl", city: "San Francisco", state: "CA", country: "USA", enplanements: 25800000, lat: 37.6213, lon: -122.379 },
+  { iata: "MIA", airport_name: "Miami Intl", city: "Miami", state: "FL", country: "USA", enplanements: 21400000, lat: 25.7959, lon: -80.2871 },
+  { iata: "SEA", airport_name: "Seattle Tacoma Intl", city: "Seattle", state: "WA", country: "USA", enplanements: 23200000, lat: 47.4502, lon: -122.3088 },
+];
+
+export const DEMO_AIRLINES = [
+  { carrier_code: "AA", airline_name: "American Airlines" },
+  { carrier_code: "DL", airline_name: "Delta Air Lines" },
+  { carrier_code: "UA", airline_name: "United Airlines" },
+  { carrier_code: "B6", airline_name: "JetBlue Airways" },
+  { carrier_code: "AS", airline_name: "Alaska Airlines" },
 ];
 
 export function findAirport(iata: string) {
@@ -138,7 +152,6 @@ export function routesFrom(origin: string) {
 export function findRoute(origin: string, destination: string) {
   return DEMO_ROUTES.find((r) => r.origin === origin.toUpperCase() && r.destination === destination.toUpperCase()) ?? null;
 }
-
 
 export function demoMetadata(note: string) {
   return {

@@ -122,3 +122,16 @@ def test_postgres_repository_roundtrip() -> None:
     context = repo.get_airport_context("JFK")
     assert context is not None
     assert context["airport"]["iata"] == "JFK"
+
+    # Edge: unknown route should return None
+    missing_detail = repo.get_route_detail("JFK", "SFO")
+    assert missing_detail is None
+
+    # Edge: unknown airport should return None
+    missing_context = repo.get_airport_context("ZZZ")
+    assert missing_context is None
+
+    # Edge: airport with no enplanement row should return context with null enplanement
+    lax_context = repo.get_airport_context("LAX")
+    assert lax_context is not None
+    assert lax_context["enplanement"] is None

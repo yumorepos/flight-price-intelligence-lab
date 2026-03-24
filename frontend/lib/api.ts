@@ -88,11 +88,38 @@ export type AirportContextResponse = {
 };
 
 
+export type AirlineOverviewResponse = {
+  airlines: {
+    carrier_code: string;
+    airline_name: string;
+    route_count: number;
+    avg_route_score: number;
+    avg_ontime_rate: number;
+  }[];
+  metadata: DataProvenance;
+};
+
 export type NetworkHubResponse = {
   hubs: {
     origin: string;
     destinations: string[];
     route_count: number;
+  }[];
+  metadata: DataProvenance;
+};
+
+export type NetworkGeoResponse = {
+  airports: {
+    iata: string;
+    airport_name: string;
+    lat: number;
+    lon: number;
+  }[];
+  routes: {
+    origin: string;
+    destination: string;
+    dominant_carrier: string;
+    score: number;
   }[];
   metadata: DataProvenance;
 };
@@ -174,4 +201,13 @@ export function getNetworkHubs(): Promise<NetworkHubResponse> {
 
 export function getSeasonalityIndex(): Promise<SeasonalityResponse> {
   return apiFetch("/seasonality/index");
+}
+
+
+export function getAirlineOverview(): Promise<AirlineOverviewResponse> {
+  return apiFetch("/airlines/overview");
+}
+
+export function getNetworkGeo(): Promise<NetworkGeoResponse> {
+  return apiFetch("/network/geo");
 }

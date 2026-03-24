@@ -67,3 +67,23 @@ def test_repository_uses_db_mode_when_database_url_present(monkeypatch) -> None:
     repo = StubDbRepo()
     rows = repo.search_airports("JFK")
     assert rows[0]["iata"] == "JFK"
+
+
+from app.core.db import DatabaseUnavailableError
+
+
+class FailingDbRepo(AnalyticsRepository):
+    def _db_rows(self, sql: str, params: tuple = ()) -> list[dict]:  # type: ignore[override]
+        raise DatabaseUnavailableError("simulated db failure")
+
+
+def test_repository_db_error_raises_unavailable(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "database_url", "postgres://example")
+    monkeypatch.setattr(settings, "use_csv_fallback", False)
+
+    repo = FailingDbRepo()
+    try:
+        repo.search_airports("JFK")
+        assert False, "expected DatabaseUnavailableError"
+    except DatabaseUnavailableError as exc:
+        assert "simulated db failure" in str(exc)

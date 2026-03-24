@@ -22,6 +22,12 @@ const MODULES = [
     status: "Live now",
   },
   {
+    href: "/airlines",
+    title: "Airline Intelligence",
+    desc: "Compare carrier footprint, route-quality score, and reliability context.",
+    status: "Live now",
+  },
+  {
     href: "/network",
     title: "Route Network",
     desc: "Browse route network patterns from major U.S. hubs.",

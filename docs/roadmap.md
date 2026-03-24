@@ -22,7 +22,8 @@
 
 ## Phase 3 — New enthusiast modules ✅
 - Airport Intelligence page backed by `/api/airports/[iata]/context`
-- Route Network page backed by `/api/network/hubs`
+- Airline Intelligence page backed by `/api/airlines/overview`
+- Route Network page with geospatial visualization backed by `/api/network/geo`
 - Seasonality page backed by `/api/seasonality/index`
 - Learn page backed by `/api/meta/methodology`
 
@@ -30,10 +31,11 @@
 - Backend repository now supports PostgreSQL query mode when `FPI_DATABASE_URL` is set
 - Data-refresh workflow now passes required ingest `--input` args and validates configured source paths
 - Added backend contract tests for categorical confidence + DB-mode branch behavior
+- Added Postgres integration tests covering happy path and edge/failure path assertions
 - Data provenance now includes `last_refreshed_at` and is surfaced in module UI notices
 
 ## Next hardening targets 🟡
-1. Add integration tests against a temporary Postgres instance
-2. Add route/airport/seasonality API contract tests in frontend test harness
-3. Expand airline intelligence and richer route-map visualization
-4. Add data freshness metadata and SLA-style “last refreshed” surfaces
+1. Expand Postgres integration tests beyond fixture-level scope (pagination, null-heavy records, query performance)
+2. Add frontend UI-level integration/E2E tests (not just API contract checks)
+3. Deepen Airline Intelligence with carrier-level delay/cancellation trend charts
+4. Add live freshness telemetry sourced from actual pipeline refresh events

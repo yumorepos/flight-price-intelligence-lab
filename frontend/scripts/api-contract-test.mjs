@@ -70,9 +70,18 @@ async function run() {
     assert.equal(methodology.score_version, "v1_heuristic");
     assertMetadata(methodology.metadata, "meta.methodology");
 
+    const airlines = await get("/api/airlines/overview");
+    assert.ok(Array.isArray(airlines.airlines), "airlines.overview: airlines must be array");
+    assertMetadata(airlines.metadata, "airlines.overview");
+
     const network = await get("/api/network/hubs");
     assert.ok(Array.isArray(network.hubs), "network.hubs: hubs must be array");
     assertMetadata(network.metadata, "network.hubs");
+
+    const networkGeo = await get("/api/network/geo");
+    assert.ok(Array.isArray(networkGeo.airports), "network.geo: airports must be array");
+    assert.ok(Array.isArray(networkGeo.routes), "network.geo: routes must be array");
+    assertMetadata(networkGeo.metadata, "network.geo");
 
     const seasonality = await get("/api/seasonality/index");
     assert.ok(Array.isArray(seasonality.rows), "seasonality.index: rows must be array");
