@@ -1,5 +1,5 @@
 {
-  "name": "avgeek-intelligence-lab",
+  "name": "flight-price-intelligence-lab",
   "private": true,
   "scripts": {
     "build": "npm --prefix frontend run build",
