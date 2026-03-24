@@ -51,6 +51,8 @@ This project is **not production-hardened** and should be treated as an enthusia
   - `GET /intelligence/routes/insights`
 - Airport insight endpoint:
   - `GET /intelligence/airports/{iata}/insights`
+- Insight quality endpoint:
+  - `GET /meta/insight-quality`
 
 Data-model foundation now includes:
 - `schedule_snapshots`

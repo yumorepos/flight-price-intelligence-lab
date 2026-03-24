@@ -126,12 +126,18 @@ class RouteInsight(BaseModel):
     explanation: str
     confidence: str
     metrics_snapshot: InsightMetricsSnapshot
+    prior_period_year: int | None = None
+    prior_period_month: int | None = None
+    trigger_deltas: dict[str, float | int] = {}
     methodology_version: str = "v0_competition_insights"
 
 
 class RouteInsightsResponse(BaseModel):
     filters: dict[str, str | int | None]
     insights: list[RouteInsight]
+    generated_count: int
+    suppressed_low_confidence_count: int
+    confidence_distribution: dict[str, int]
     metadata: DataProvenance
     intelligence_meta: IntelligenceMeta
 
@@ -144,11 +150,35 @@ class AirportInsight(BaseModel):
     explanation: str
     confidence: str
     metrics_snapshot: InsightMetricsSnapshot
+    prior_period_year: int | None = None
+    prior_period_month: int | None = None
+    trigger_deltas: dict[str, float | int] = {}
     methodology_version: str = "v0_competition_insights"
 
 
 class AirportInsightsResponse(BaseModel):
     airport: AirportContextAirport
     insights: list[AirportInsight]
+    generated_count: int
+    suppressed_low_confidence_count: int
+    confidence_distribution: dict[str, int]
+    metadata: DataProvenance
+    intelligence_meta: IntelligenceMeta
+
+
+class RouteInsightTimelinePoint(BaseModel):
+    year: int
+    month: int
+    carrier_concentration_hhi: float
+    active_carriers: int
+    dominant_carrier_share: float
+    entrant_count: int
+    exit_count: int
+    inferred_label: str | None = None
+
+
+class RouteInsightTimelineResponse(BaseModel):
+    route_key: str
+    points: list[RouteInsightTimelinePoint]
     metadata: DataProvenance
     intelligence_meta: IntelligenceMeta

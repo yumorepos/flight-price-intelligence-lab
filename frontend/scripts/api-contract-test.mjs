@@ -106,6 +106,8 @@ async function run() {
     assert.match(routeCompetition.detail, /Backend-only endpoint/i);
     const routeInsights = await getStatus("/api/intelligence/routes/insights?airport_iata=JFK", 503);
     assert.match(routeInsights.detail, /Backend-only endpoint/i);
+    const insightQuality = await getStatus("/api/meta/insight-quality", 503);
+    assert.match(insightQuality.detail, /Backend-only endpoint/i);
 
     console.log("✅ Frontend API contract tests passed");
   } finally {

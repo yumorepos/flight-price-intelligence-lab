@@ -152,6 +152,9 @@ class StubIntelService:
                     "methodology_version": "v0_competition_insights",
                 }
             ],
+            "generated_count": 1,
+            "suppressed_low_confidence_count": 0,
+            "confidence_distribution": {"high": 1, "medium": 0, "low": 0},
             "metadata": {
                 "data_source": "postgres",
                 "is_fallback": False,
@@ -177,6 +180,9 @@ class StubIntelService:
                     "methodology_version": "v0_competition_insights",
                 }
             ],
+            "generated_count": 1,
+            "suppressed_low_confidence_count": 0,
+            "confidence_distribution": {"high": 1, "medium": 0, "low": 0},
             "metadata": {
                 "data_source": "postgres",
                 "is_fallback": False,
@@ -184,6 +190,35 @@ class StubIntelService:
                 "note": None,
                 "last_refreshed_at": None,
             },
+            "intelligence_meta": {"methodology_version": "v0_competition_insights", "coverage_summary": "stub"},
+        }
+
+    def route_insight_timeline(self, origin: str, destination: str, periods: int = 12):
+        return {
+            "route_key": f"{origin}-{destination}",
+            "points": [
+                {
+                    "year": 2025,
+                    "month": 12,
+                    "carrier_concentration_hhi": 3800.0,
+                    "active_carriers": 2,
+                    "dominant_carrier_share": 0.66,
+                    "entrant_count": 0,
+                    "exit_count": 1,
+                    "inferred_label": None,
+                },
+                {
+                    "year": 2026,
+                    "month": 1,
+                    "carrier_concentration_hhi": 3400.0,
+                    "active_carriers": 3,
+                    "dominant_carrier_share": 0.52,
+                    "entrant_count": 1,
+                    "exit_count": 0,
+                    "inferred_label": "competition increasing",
+                },
+            ],
+            "metadata": {"data_source": "postgres", "is_fallback": False, "data_complete": True, "note": None, "last_refreshed_at": None},
             "intelligence_meta": {"methodology_version": "v0_competition_insights", "coverage_summary": "stub"},
         }
 
@@ -219,6 +254,10 @@ def test_intelligence_endpoints_with_stubbed_service() -> None:
     airport_insights = client.get("/intelligence/airports/JFK/insights")
     assert airport_insights.status_code == 200
     assert airport_insights.json()["insights"][0]["insight_label"] == "stable dominance"
+
+    timeline = client.get("/intelligence/routes/JFK/LAX/insight-timeline")
+    assert timeline.status_code == 200
+    assert timeline.json()["points"][1]["inferred_label"] == "competition increasing"
 
 
 def _write_csv(path: Path, headers: list[str], rows: list[list[object]]) -> None:
@@ -313,6 +352,9 @@ def test_csv_intelligence_repository_contract(monkeypatch, tmp_path: Path) -> No
 
     airport_insights = service.airport_insights("JFK")
     assert airport_insights.insights
+
+    timeline = service.route_insight_timeline("JFK", "LAX")
+    assert timeline.points
 
 
 def test_sparse_single_carrier_competition_case(monkeypatch, tmp_path: Path) -> None:

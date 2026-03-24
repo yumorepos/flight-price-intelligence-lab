@@ -280,9 +280,15 @@ export type RouteInsightsResponse = {
     insight_label: string;
     explanation: string;
     confidence: string;
+    prior_period_year: number | null;
+    prior_period_month: number | null;
+    trigger_deltas: Record<string, string | number>;
     metrics_snapshot: { values: Record<string, string | number | null> };
     methodology_version: string;
   }[];
+  generated_count: number;
+  suppressed_low_confidence_count: number;
+  confidence_distribution: Record<string, number>;
   metadata: DataProvenance;
   intelligence_meta: {
     methodology_version: string;
@@ -299,8 +305,44 @@ export type AirportInsightsResponse = {
     insight_label: string;
     explanation: string;
     confidence: string;
+    prior_period_year: number | null;
+    prior_period_month: number | null;
+    trigger_deltas: Record<string, string | number>;
     metrics_snapshot: { values: Record<string, string | number | null> };
     methodology_version: string;
+  }[];
+  generated_count: number;
+  suppressed_low_confidence_count: number;
+  confidence_distribution: Record<string, number>;
+  metadata: DataProvenance;
+  intelligence_meta: {
+    methodology_version: string;
+    coverage_summary: string;
+  };
+};
+
+export type InsightQualityResponse = {
+  methodology_version: string;
+  thresholds: Record<string, number>;
+  total_insights_generated: number;
+  suppressed_low_confidence_count: number;
+  suppressed_rate_pct: number;
+  label_distribution: Record<string, number>;
+  confidence_distribution: Record<string, number>;
+  data_coverage_stats: Record<string, number>;
+};
+
+export type RouteInsightTimelineResponse = {
+  route_key: string;
+  points: {
+    year: number;
+    month: number;
+    carrier_concentration_hhi: number;
+    active_carriers: number;
+    dominant_carrier_share: number;
+    entrant_count: number;
+    exit_count: number;
+    inferred_label: string | null;
   }[];
   metadata: DataProvenance;
   intelligence_meta: {
@@ -448,4 +490,14 @@ export function getRouteInsights(params: {
 
 export function getAirportInsights(iata: string): Promise<AirportInsightsResponse> {
   return apiFetch(`/intelligence/airports/${encodeURIComponent(iata)}/insights`);
+}
+
+export function getInsightQuality(): Promise<InsightQualityResponse> {
+  return apiFetch("/meta/insight-quality");
+}
+
+export function getRouteInsightTimeline(origin: string, destination: string, periods = 12): Promise<RouteInsightTimelineResponse> {
+  return apiFetch(
+    `/intelligence/routes/${encodeURIComponent(origin)}/${encodeURIComponent(destination)}/insight-timeline?periods=${periods}`,
+  );
 }

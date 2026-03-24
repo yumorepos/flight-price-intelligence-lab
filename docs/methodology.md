@@ -130,3 +130,8 @@ Each insight includes:
 - human-readable explanation,
 - supporting metric snapshot,
 - confidence based on flights observed + multi-period consistency.
+
+Calibration decisions (current):
+- HHI delta trigger is data-aware: 75th percentile of observed absolute route HHI deltas, clamped to `[150, 350]`.
+- Dominance thresholds remain fixed (`0.60` route, `0.50` airport) pending broader historical calibration.
+- Churn triggers remain fixed (`2` route, `8` airport aggregate) pending larger benchmark windows.

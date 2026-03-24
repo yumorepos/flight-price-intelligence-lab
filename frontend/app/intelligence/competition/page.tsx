@@ -7,11 +7,13 @@ import {
   AirportCompetitionResponse,
   AirportInsightsResponse,
   RouteCompetitionResponse,
+  InsightQualityResponse,
   RouteInsightsResponse,
   getAirportCompetition,
   getAirportInsights,
   getRouteCompetition,
   getRouteInsights,
+  getInsightQuality,
 } from "@/lib/api";
 import { formatPercent } from "@/lib/format";
 
@@ -21,27 +23,31 @@ export default function CompetitionIntelPage() {
   const [airportData, setAirportData] = useState<AirportCompetitionResponse | null>(null);
   const [routeInsights, setRouteInsights] = useState<RouteInsightsResponse | null>(null);
   const [airportInsights, setAirportInsights] = useState<AirportInsightsResponse | null>(null);
+  const [quality, setQuality] = useState<InsightQualityResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         setError(null);
-        const [routes, airportComp, routeInsightResp, airportInsightResp] = await Promise.all([
+        const [routes, airportComp, routeInsightResp, airportInsightResp, qualityResp] = await Promise.all([
           getRouteCompetition({ airport_iata: airport, limit: 25 }),
           getAirportCompetition(airport),
           getRouteInsights({ airport_iata: airport, limit: 10 }),
           getAirportInsights(airport),
+          getInsightQuality(),
         ]);
         setRouteData(routes);
         setAirportData(airportComp);
         setRouteInsights(routeInsightResp);
         setAirportInsights(airportInsightResp);
+        setQuality(qualityResp);
       } catch (e) {
         setRouteData(null);
         setAirportData(null);
         setRouteInsights(null);
         setAirportInsights(null);
+        setQuality(null);
         setError(e instanceof Error ? e.message : "Failed to load competition intelligence.");
       }
     };
@@ -75,6 +81,21 @@ export default function CompetitionIntelPage() {
           <h2>Why this matters</h2>
           <p>{why}</p>
           <p className="muted mt-2">{airportData.intelligence_meta.coverage_summary}</p>
+        </section>
+      ) : null}
+
+      {quality ? (
+        <section className="panel">
+          <h2>Trust layer</h2>
+          <p>
+            Total generated insights: {quality.total_insights_generated}. Suppressed low confidence: {quality.suppressed_low_confidence_count} (
+            {quality.suppressed_rate_pct.toFixed(1)}%).
+          </p>
+          <p className="muted mt-2">
+            Coverage rows: {quality.data_coverage_stats.route_competition_rows}. Confidence distribution: high{" "}
+            {quality.confidence_distribution.high ?? 0}, medium {quality.confidence_distribution.medium ?? 0}, low{" "}
+            {quality.confidence_distribution.low ?? 0}.
+          </p>
         </section>
       ) : null}
 
@@ -148,6 +169,14 @@ export default function CompetitionIntelPage() {
           <p className="muted">
             Methodology: {routeInsights.intelligence_meta.methodology_version}. {routeInsights.intelligence_meta.coverage_summary}
           </p>
+          <div className="mt-3 text-sm text-gray-700">
+            <p>Generated insights: {routeInsights.generated_count}</p>
+            <p>Suppressed (low confidence): {routeInsights.suppressed_low_confidence_count}</p>
+            <p>
+              Confidence distribution: high {routeInsights.confidence_distribution.high ?? 0}, medium{" "}
+              {routeInsights.confidence_distribution.medium ?? 0}, low {routeInsights.confidence_distribution.low ?? 0}
+            </p>
+          </div>
           <div className="route-grid mt-4">
             {routeInsights.insights.map((insight, idx) => (
               <article className="route-card" key={`${insight.route_key}-${insight.insight_label}-${idx}`}>

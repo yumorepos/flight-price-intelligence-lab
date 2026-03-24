@@ -7,6 +7,7 @@ from app.schemas.intelligence import (
     AirportRoleResponse,
     RouteChangesResponse,
     RouteCompetitionResponse,
+    RouteInsightTimelineResponse,
     RouteInsightsResponse,
 )
 from app.services.analytics import AnalyticsService
@@ -86,3 +87,8 @@ def route_insights(
 @router.get("/airports/{iata}/insights", response_model=AirportInsightsResponse)
 def airport_insights(iata: str) -> AirportInsightsResponse:
     return service.airport_insights(iata=iata.strip().upper())
+
+
+@router.get("/routes/{origin}/{destination}/insight-timeline", response_model=RouteInsightTimelineResponse)
+def route_insight_timeline(origin: str, destination: str, periods: int = Query(default=12, ge=2, le=36)) -> RouteInsightTimelineResponse:
+    return service.route_insight_timeline(origin=origin.strip().upper(), destination=destination.strip().upper(), periods=periods)

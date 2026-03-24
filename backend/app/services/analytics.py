@@ -27,11 +27,13 @@ from app.schemas.intelligence import (
     RouteCompetitionRecord,
     RouteCompetitionResponse,
     RouteInsight,
+    RouteInsightTimelinePoint,
+    RouteInsightTimelineResponse,
     RouteInsightsResponse,
     RouteChangeEvent,
     RouteChangesResponse,
 )
-from app.schemas.meta import EvidenceCoverageRow, EvidenceResponse, MethodologyResponse
+from app.schemas.meta import EvidenceCoverageRow, EvidenceResponse, InsightQualityResponse, MethodologyResponse
 from app.schemas.route import (
     CheapestMonth,
     MonthlyFarePoint,
@@ -342,6 +344,33 @@ class AnalyticsService:
             return "medium"
         return "low"
 
+    @staticmethod
+    def _quantile(values: list[float], q: float) -> float:
+        if not values:
+            return 0.0
+        ordered = sorted(values)
+        idx = int((len(ordered) - 1) * q)
+        return float(ordered[idx])
+
+    def _calibrated_thresholds(self, rows: list[dict]) -> dict[str, float]:
+        hhi_deltas: list[float] = []
+        by_route: dict[str, list[dict]] = {}
+        for row in rows:
+            by_route.setdefault(row["route_key"], []).append(row)
+        for history in by_route.values():
+            history.sort(key=lambda r: (r["year"], r["month"]), reverse=True)
+            for i in range(len(history) - 1):
+                hhi_deltas.append(abs(history[i]["carrier_concentration_hhi"] - history[i + 1]["carrier_concentration_hhi"]))
+
+        hhi_q75 = self._quantile(hhi_deltas, 0.75) if hhi_deltas else 0.0
+        return {
+            "hhi_delta_trigger": max(150.0, min(350.0, hhi_q75)),
+            "route_dominance_share": 0.6,
+            "airport_dominance_share": 0.5,
+            "route_churn_trigger": 2.0,
+            "airport_churn_trigger": 8.0,
+        }
+
     def route_insights(
         self,
         airport_iata: str | None = None,
@@ -359,11 +388,15 @@ class AnalyticsService:
         except DatabaseUnavailableError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
 
+        thresholds = self._calibrated_thresholds(rows)
         by_route: dict[str, list[dict]] = {}
         for row in rows:
             by_route.setdefault(row["route_key"], []).append(row)
 
         insights: list[RouteInsight] = []
+        suppressed_low_confidence_count = 0
+        generated_count = 0
+        confidence_distribution = {"high": 0, "medium": 0, "low": 0}
         for route_key, history in by_route.items():
             history.sort(key=lambda r: (r["year"], r["month"]), reverse=True)
             latest = history[0]
@@ -376,27 +409,30 @@ class AnalyticsService:
                 hhi_delta = latest["carrier_concentration_hhi"] - previous["carrier_concentration_hhi"]
 
             churn = latest["entrant_count"] + latest["exit_count"]
-            if previous and hhi_delta <= -200 and latest["entrant_count"] > 0:
+            if previous and hhi_delta <= -thresholds["hhi_delta_trigger"] and latest["entrant_count"] > 0:
                 label = "competition increasing"
                 explanation = "Concentration dropped and at least one entrant appeared versus prior period."
-            elif previous and hhi_delta >= 200 and latest["exit_count"] > 0:
+            elif previous and hhi_delta >= thresholds["hhi_delta_trigger"] and latest["exit_count"] > 0:
                 label = "market consolidation"
                 explanation = "Concentration rose and at least one carrier exit appeared versus prior period."
             elif latest["entrant_count"] >= 1 and latest["entrant_pressure_signal"] in ("pressure_up", "rotation"):
                 label = "new entrant pressure"
                 explanation = "New carrier presence is increasing competitive pressure on the route."
-            elif churn >= 2:
+            elif churn >= thresholds["route_churn_trigger"]:
                 label = "unstable competition"
                 explanation = "High entrant/exit churn indicates unstable competitive structure."
-            elif latest["dominant_carrier_share"] >= 0.6:
+            elif latest["dominant_carrier_share"] >= thresholds["route_dominance_share"]:
                 label = "stable dominance"
                 explanation = "One carrier holds durable share dominance in current observed slice."
 
             if not label:
                 continue
 
+            generated_count += 1
             confidence = self._confidence_from_coverage(latest["flights_observed"], len(history))
+            confidence_distribution[confidence] = confidence_distribution.get(confidence, 0) + 1
             if confidence == "low":
+                suppressed_low_confidence_count += 1
                 continue
 
             insights.append(
@@ -409,6 +445,13 @@ class AnalyticsService:
                     insight_label=label,
                     explanation=explanation or "Derived from deterministic competition rules.",
                     confidence=confidence,
+                    prior_period_year=previous["year"] if previous else None,
+                    prior_period_month=previous["month"] if previous else None,
+                    trigger_deltas={
+                        "hhi_delta_vs_prev": round(hhi_delta, 3),
+                        "entrant_minus_exit": latest["entrant_count"] - latest["exit_count"],
+                        "churn": churn,
+                    },
                     metrics_snapshot={
                         "values": {
                             "active_carriers": latest["active_carriers"],
@@ -432,6 +475,9 @@ class AnalyticsService:
                 "limit": limit,
             },
             insights=insights[:limit],
+            generated_count=generated_count,
+            suppressed_low_confidence_count=suppressed_low_confidence_count,
+            confidence_distribution=confidence_distribution,
             metadata=self._metadata(),
             intelligence_meta=IntelligenceMeta(
                 methodology_version="v0_competition_insights",
@@ -461,6 +507,9 @@ class AnalyticsService:
                     country=airport["country"],
                 ),
                 insights=[],
+                generated_count=0,
+                suppressed_low_confidence_count=0,
+                confidence_distribution={"high": 0, "medium": 0, "low": 0},
                 metadata=self._metadata(),
                 intelligence_meta=IntelligenceMeta(
                     methodology_version="v0_competition_insights",
@@ -473,11 +522,19 @@ class AnalyticsService:
         hhi_delta = (latest["carrier_concentration_hhi"] - previous["carrier_concentration_hhi"]) if previous else 0.0
 
         aggregate_churn = sum((r["entrant_count"] + r["exit_count"]) for r in route_rows[:50])
+        thresholds = self._calibrated_thresholds(route_rows)
         insights: list[AirportInsight] = []
+        generated_count = 0
+        suppressed_low_confidence_count = 0
+        confidence_distribution = {"high": 0, "medium": 0, "low": 0}
 
         def add(label: str, explanation: str) -> None:
+            nonlocal generated_count, suppressed_low_confidence_count
+            generated_count += 1
             confidence = self._confidence_from_coverage(latest["flights_observed"], len(history))
+            confidence_distribution[confidence] = confidence_distribution.get(confidence, 0) + 1
             if confidence == "low":
+                suppressed_low_confidence_count += 1
                 return
             insights.append(
                 AirportInsight(
@@ -487,6 +544,12 @@ class AnalyticsService:
                     insight_label=label,
                     explanation=explanation,
                     confidence=confidence,
+                    prior_period_year=previous["year"] if previous else None,
+                    prior_period_month=previous["month"] if previous else None,
+                    trigger_deltas={
+                        "hhi_delta_vs_prev": round(hhi_delta, 3),
+                        "aggregate_route_churn": aggregate_churn,
+                    },
                     metrics_snapshot={
                         "values": {
                             "active_carriers": latest["active_carriers"],
@@ -501,13 +564,13 @@ class AnalyticsService:
                 )
             )
 
-        if previous and hhi_delta <= -150 and latest["contested_route_share"] > previous["contested_route_share"]:
+        if previous and hhi_delta <= -thresholds["hhi_delta_trigger"] and latest["contested_route_share"] > previous["contested_route_share"]:
             add("competition increasing", "Airport competition is broadening: concentration down and contested-route share up.")
-        if previous and hhi_delta >= 150 and latest["contested_route_share"] < previous["contested_route_share"]:
+        if previous and hhi_delta >= thresholds["hhi_delta_trigger"] and latest["contested_route_share"] < previous["contested_route_share"]:
             add("market consolidation", "Airport concentration is increasing while contested-route share is shrinking.")
-        if latest["dominant_carrier_share"] >= 0.5:
+        if latest["dominant_carrier_share"] >= thresholds["airport_dominance_share"]:
             add("stable dominance", "Dominant carrier share remains above 50%, indicating structural carrier pressure zone.")
-        if aggregate_churn >= 8:
+        if aggregate_churn >= thresholds["airport_churn_trigger"]:
             add("unstable competition", "High route-level entrant/exit churn suggests unstable airport competition conditions.")
 
         return AirportInsightsResponse(
@@ -519,10 +582,63 @@ class AnalyticsService:
                 country=airport["country"],
             ),
             insights=insights,
+            generated_count=generated_count,
+            suppressed_low_confidence_count=suppressed_low_confidence_count,
+            confidence_distribution=confidence_distribution,
             metadata=self._metadata(),
             intelligence_meta=IntelligenceMeta(
                 methodology_version="v0_competition_insights",
                 coverage_summary="Airport insights are deterministic rules over airport and route competition snapshots; low-confidence outputs are suppressed.",
+            ),
+        )
+
+    def route_insight_timeline(self, origin: str, destination: str, periods: int = 12) -> RouteInsightTimelineResponse:
+        route_key = f"{origin}-{destination}"
+        try:
+            history = self.repository.get_route_competition_history(route_key=route_key, periods=periods)
+        except DatabaseUnavailableError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+        thresholds = self._calibrated_thresholds(history)
+        points: list[RouteInsightTimelinePoint] = []
+        sorted_history = sorted(history, key=lambda r: (r["year"], r["month"]))
+        for idx, row in enumerate(sorted_history):
+            prev = sorted_history[idx - 1] if idx > 0 else None
+            label = None
+            if prev:
+                hhi_delta = row["carrier_concentration_hhi"] - prev["carrier_concentration_hhi"]
+                churn = row["entrant_count"] + row["exit_count"]
+                if hhi_delta <= -thresholds["hhi_delta_trigger"] and row["entrant_count"] > 0:
+                    label = "competition increasing"
+                elif hhi_delta >= thresholds["hhi_delta_trigger"] and row["exit_count"] > 0:
+                    label = "market consolidation"
+                elif row["entrant_count"] >= 1 and row["entrant_pressure_signal"] in ("pressure_up", "rotation"):
+                    label = "new entrant pressure"
+                elif churn >= thresholds["route_churn_trigger"]:
+                    label = "unstable competition"
+                elif row["dominant_carrier_share"] >= thresholds["route_dominance_share"]:
+                    label = "stable dominance"
+
+            points.append(
+                RouteInsightTimelinePoint(
+                    year=row["year"],
+                    month=row["month"],
+                    carrier_concentration_hhi=row["carrier_concentration_hhi"],
+                    active_carriers=row["active_carriers"],
+                    dominant_carrier_share=row["dominant_carrier_share"],
+                    entrant_count=row["entrant_count"],
+                    exit_count=row["exit_count"],
+                    inferred_label=label,
+                )
+            )
+
+        return RouteInsightTimelineResponse(
+            route_key=route_key,
+            points=points,
+            metadata=self._metadata(),
+            intelligence_meta=IntelligenceMeta(
+                methodology_version="v0_competition_insights",
+                coverage_summary="Timeline labels are inferred by applying insight rules period-over-period on route competition history.",
             ),
         )
 
@@ -568,4 +684,83 @@ class AnalyticsService:
             methodology_version="v0_competitiveness",
             coverage=coverage,
             freshness_note="Counts are based on currently loaded mart CSV files when in fallback mode.",
+        )
+
+    def insight_quality(self) -> InsightQualityResponse:
+        rows = self.repository._read_csv("route_competition_metrics.csv")
+        parsed = []
+        for row in rows:
+            try:
+                parsed.append(
+                    {
+                        "route_key": row.get("route_key", ""),
+                        "year": int(row.get("year", 0)),
+                        "month": int(row.get("month", 0)),
+                        "carrier_concentration_hhi": float(row.get("carrier_concentration_hhi", 0)),
+                        "entrant_count": int(row.get("entrant_count", 0)),
+                        "exit_count": int(row.get("exit_count", 0)),
+                        "dominant_carrier_share": float(row.get("dominant_carrier_share", 0)),
+                        "entrant_pressure_signal": row.get("entrant_pressure_signal", "stable"),
+                        "flights_observed": int(row.get("flights_observed", 0)),
+                    }
+                )
+            except ValueError:
+                continue
+
+        thresholds = self._calibrated_thresholds(parsed)
+        by_route: dict[str, list[dict]] = {}
+        for row in parsed:
+            by_route.setdefault(row["route_key"], []).append(row)
+
+        label_distribution: dict[str, int] = {}
+        confidence_distribution = {"high": 0, "medium": 0, "low": 0}
+        generated = 0
+        suppressed = 0
+        for history in by_route.values():
+            history.sort(key=lambda r: (r["year"], r["month"]), reverse=True)
+            latest = history[0]
+            prev = history[1] if len(history) > 1 else None
+            if not prev:
+                continue
+            hhi_delta = latest["carrier_concentration_hhi"] - prev["carrier_concentration_hhi"]
+            label = None
+            if hhi_delta <= -thresholds["hhi_delta_trigger"] and latest["entrant_count"] > 0:
+                label = "competition increasing"
+            elif hhi_delta >= thresholds["hhi_delta_trigger"] and latest["exit_count"] > 0:
+                label = "market consolidation"
+            elif latest["entrant_count"] >= 1 and latest["entrant_pressure_signal"] in ("pressure_up", "rotation"):
+                label = "new entrant pressure"
+            elif latest["entrant_count"] + latest["exit_count"] >= thresholds["route_churn_trigger"]:
+                label = "unstable competition"
+            elif latest["dominant_carrier_share"] >= thresholds["route_dominance_share"]:
+                label = "stable dominance"
+            if not label:
+                continue
+            generated += 1
+            conf = self._confidence_from_coverage(latest["flights_observed"], len(history))
+            confidence_distribution[conf] = confidence_distribution.get(conf, 0) + 1
+            if conf == "low":
+                suppressed += 1
+            else:
+                label_distribution[label] = label_distribution.get(label, 0) + 1
+
+        suppressed_rate = (suppressed / generated * 100.0) if generated else 0.0
+        avg_conf = 0.0
+        if generated:
+            score_map = {"low": 1, "medium": 2, "high": 3}
+            avg_conf = sum(score_map[k] * v for k, v in confidence_distribution.items()) / generated
+
+        return InsightQualityResponse(
+            methodology_version="v0_competition_insights",
+            thresholds=thresholds,
+            total_insights_generated=generated,
+            suppressed_low_confidence_count=suppressed,
+            suppressed_rate_pct=round(suppressed_rate, 2),
+            label_distribution=label_distribution,
+            confidence_distribution=confidence_distribution,
+            data_coverage_stats={
+                "route_competition_rows": len(parsed),
+                "routes_with_history": len(by_route),
+                "avg_confidence_score_1_to_3": round(avg_conf, 3),
+            },
         )
