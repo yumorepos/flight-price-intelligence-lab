@@ -1,12 +1,29 @@
-const SEASONALITY_ROWS = [
-  { month: "Jan", index: 0.88, interpretation: "Lower-than-median fares in sample routes" },
-  { month: "Mar", index: 0.97, interpretation: "Near baseline" },
-  { month: "Jun", index: 1.12, interpretation: "Higher seasonal demand pressure" },
-  { month: "Aug", index: 1.09, interpretation: "Summer premium still elevated" },
-  { month: "Nov", index: 0.91, interpretation: "Shoulder-season reprieve" },
-];
+"use client";
+
+import { useEffect, useState } from "react";
+import { MetadataNotice } from "@/components/MetadataNotice";
+import { SeasonalityResponse, getSeasonalityIndex } from "@/lib/api";
+import { formatCurrency } from "@/lib/format";
+
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export default function SeasonalityPage() {
+  const [data, setData] = useState<SeasonalityResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setError(null);
+        setData(await getSeasonalityIndex());
+      } catch (e) {
+        setData(null);
+        setError(e instanceof Error ? e.message : "Failed to load seasonality index.");
+      }
+    };
+    void load();
+  }, []);
+
   return (
     <main className="page-shell">
       <section className="hero">
@@ -15,30 +32,39 @@ export default function SeasonalityPage() {
         <p>Route-relative seasonality snapshots with caveat-first interpretation.</p>
       </section>
 
-      <section className="panel">
-        <h2>Observed seasonal index (prototype)</h2>
-        <p className="muted">Index &lt; 1.0 indicates below-route baseline pricing; index &gt; 1.0 indicates above baseline.</p>
-        <div className="mt-6 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-orange-200">
-                <th className="py-3">Month</th>
-                <th className="py-3">Seasonal index</th>
-                <th className="py-3">Interpretation</th>
-              </tr>
-            </thead>
-            <tbody>
-              {SEASONALITY_ROWS.map((row) => (
-                <tr key={row.month} className="border-b border-gray-100">
-                  <td className="py-3 font-semibold">{row.month}</td>
-                  <td className="py-3">{row.index.toFixed(2)}</td>
-                  <td className="py-3 text-gray-600">{row.interpretation}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {error ? <p className="status error">Seasonality error: {error}</p> : null}
+
+      {data ? (
+        <>
+          <MetadataNotice metadata={data.metadata} />
+          <section className="panel">
+            <h2>Observed seasonal index</h2>
+            <p className="muted">
+              Baseline across loaded fares: <strong>{formatCurrency(data.baseline_average_fare_usd)}</strong>. Index &lt; 1.0 indicates below-route baseline pricing.
+            </p>
+            <div className="mt-6 overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-orange-200">
+                    <th className="py-3">Month</th>
+                    <th className="py-3">Avg fare</th>
+                    <th className="py-3">Seasonal index</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.rows.map((row) => (
+                    <tr key={row.month} className="border-b border-gray-100">
+                      <td className="py-3 font-semibold">{MONTH_NAMES[row.month - 1]}</td>
+                      <td className="py-3">{formatCurrency(row.average_fare_usd)}</td>
+                      <td className="py-3 text-gray-700">{row.seasonal_index.toFixed(3)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      ) : null}
     </main>
   );
 }

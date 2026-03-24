@@ -86,6 +86,26 @@ export type AirportContextResponse = {
   metadata: DataProvenance;
 };
 
+
+export type NetworkHubResponse = {
+  hubs: {
+    origin: string;
+    destinations: string[];
+    route_count: number;
+  }[];
+  metadata: DataProvenance;
+};
+
+export type SeasonalityResponse = {
+  baseline_average_fare_usd: number;
+  rows: {
+    month: number;
+    average_fare_usd: number;
+    seasonal_index: number;
+  }[];
+  metadata: DataProvenance;
+};
+
 export type MethodologyResponse = {
   score_version: string;
   metric_descriptions: Record<string, string>;
@@ -143,4 +163,13 @@ export function getAirportContext(iata: string): Promise<AirportContextResponse>
 
 export function getMethodology(): Promise<MethodologyResponse> {
   return apiFetch("/meta/methodology");
+}
+
+
+export function getNetworkHubs(): Promise<NetworkHubResponse> {
+  return apiFetch("/network/hubs");
+}
+
+export function getSeasonalityIndex(): Promise<SeasonalityResponse> {
+  return apiFetch("/seasonality/index");
 }

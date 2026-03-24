@@ -75,6 +75,17 @@ The marts and schema are still highly reusable for expanded aviation modules.
 
 ---
 
+
+
+## Data Refresh Workflow Inputs
+
+The scheduled `data-refresh.yml` workflow expects these repository/environment variables to point to readable source files:
+- `BTS_DB1B_INPUT`
+- `BTS_ONTIME_INPUT`
+- `FAA_ENPLANEMENTS_INPUT`
+
+The workflow validates these paths before ingestion and then passes them explicitly to ingest scripts.
+
 ## Honest Limitations
 
 - No real-time flight or price ingestion in this repo.
