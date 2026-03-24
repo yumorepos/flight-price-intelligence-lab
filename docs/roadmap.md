@@ -30,6 +30,7 @@
 - Backend repository now supports PostgreSQL query mode when `FPI_DATABASE_URL` is set
 - Data-refresh workflow now passes required ingest `--input` args and validates configured source paths
 - Added backend contract tests for categorical confidence + DB-mode branch behavior
+- Data provenance now includes `last_refreshed_at` and is surfaced in module UI notices
 
 ## Next hardening targets 🟡
 1. Add integration tests against a temporary Postgres instance

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findAirport, findRoute } from "@/lib/demo-data";
+import { demoMetadata, findAirport, findRoute } from "@/lib/demo-data";
 
 export async function GET(_request: NextRequest, { params }: { params: { origin: string; destination: string } }) {
   const origin = params.origin.toUpperCase();
@@ -48,11 +48,6 @@ export async function GET(_request: NextRequest, { params }: { params: { origin:
     },
     cheapest_month: cheapest,
     methodology_hint: "Scores are generated via v1_heuristic methodology; consult /meta/methodology for caveats.",
-    metadata: {
-      data_source: "mock_demo_data",
-      is_fallback: true,
-      data_complete: false,
-      note: "Mock route detail for demo parity. Replace with backend for full dataset coverage.",
-    },
+    metadata: demoMetadata("Mock route detail for demo parity. Replace with backend for full dataset coverage."),
   });
 }

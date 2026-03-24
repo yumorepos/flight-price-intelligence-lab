@@ -14,6 +14,8 @@ This repository supports three runtime modes:
 3. **Backend API mode** (`NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`)
    - Frontend uses FastAPI endpoints.
 
+If you want Next.js to proxy `/api/*` to backend, set `USE_BACKEND_PROXY=true` and `BACKEND_URL=http://127.0.0.1:8000`.
+
 This project is **MVP+ portfolio-grade**, not production-hardened.
 
 ---

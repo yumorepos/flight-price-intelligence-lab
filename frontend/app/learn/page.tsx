@@ -31,6 +31,7 @@ export default function LearnPage() {
 
       {data ? (
         <>
+          {data.metadata ? <section className="panel"><p className="muted">Methodology source: {data.metadata.data_source} · Last refreshed: {data.metadata.last_refreshed_at ?? "unknown"}</p></section> : null}
           <section className="panel">
             <h2>Score version: {data.score_version}</h2>
             <div className="mt-4 space-y-2">

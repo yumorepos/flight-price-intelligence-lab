@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findAirport, routesFrom } from "@/lib/demo-data";
+import { demoMetadata, findAirport, routesFrom } from "@/lib/demo-data";
 
 export async function GET(_request: NextRequest, { params }: { params: { iata: string } }) {
   const iata = params.iata.toUpperCase();
@@ -30,11 +30,6 @@ export async function GET(_request: NextRequest, { params }: { params: { iata: s
       total_enplanements: airport.enplanements,
     },
     related_routes: relatedRoutes,
-    metadata: {
-      data_source: "mock_demo_data",
-      is_fallback: true,
-      data_complete: false,
-      note: "Mock airport context for demo parity. Replace with backend for full real coverage.",
-    },
+    metadata: demoMetadata("Mock airport context for demo parity. Replace with backend for full real coverage."),
   });
 }

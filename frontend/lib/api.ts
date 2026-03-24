@@ -3,6 +3,7 @@ export type DataProvenance = {
   is_fallback: boolean;
   data_complete: boolean;
   note: string | null;
+  last_refreshed_at: string | null;
 };
 
 export type Airport = {
@@ -111,6 +112,7 @@ export type MethodologyResponse = {
   metric_descriptions: Record<string, string>;
   caveats: string[];
   source_coverage_notes: string[];
+  metadata?: DataProvenance;
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
