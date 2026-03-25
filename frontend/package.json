@@ -9,7 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test:api-contracts": "node scripts/api-contract-test.mjs",
-    "test:e2e": "playwright test -c playwright.config.ts"
+    "test:e2e": "playwright test -c playwright.config.ts",
+    "verify:deployment": "node scripts/verify-deployment.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.344.0",

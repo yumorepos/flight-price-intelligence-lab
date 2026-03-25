@@ -353,10 +353,17 @@ export type RouteInsightTimelineResponse = {
   };
 };
 
-const API_BASE_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL, process.env.NODE_ENV);
+const API_BASE_URL = resolveApiBaseUrl({
+  envValue: process.env.NEXT_PUBLIC_API_BASE_URL,
+  nodeEnv: process.env.NODE_ENV,
+  useBackendProxy: process.env.NEXT_PUBLIC_USE_BACKEND_PROXY,
+});
 
 function withApiHint(detail: string): string {
-  const defaultBackend = getDefaultBackendHint(process.env.NODE_ENV);
+  const defaultBackend = getDefaultBackendHint({
+    nodeEnv: process.env.NODE_ENV,
+    useBackendProxy: process.env.NEXT_PUBLIC_USE_BACKEND_PROXY,
+  });
   return `${detail} Verify the backend is running and reachable (default: ${defaultBackend}).`;
 }
 
