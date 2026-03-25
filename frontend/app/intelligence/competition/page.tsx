@@ -16,9 +16,10 @@ import {
   getInsightQuality,
 } from "@/lib/api";
 import { formatPercent } from "@/lib/format";
+import { resolveAirportDefaults } from "@/lib/airport-defaults";
 
 export default function CompetitionIntelPage() {
-  const [airport, setAirport] = useState("JFK");
+  const [airport, setAirport] = useState("");
   const [routeData, setRouteData] = useState<RouteCompetitionResponse | null>(null);
   const [airportData, setAirportData] = useState<AirportCompetitionResponse | null>(null);
   const [routeInsights, setRouteInsights] = useState<RouteInsightsResponse | null>(null);
@@ -27,6 +28,16 @@ export default function CompetitionIntelPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const bootstrap = async () => {
+      const defaults = await resolveAirportDefaults();
+      setAirport(defaults.defaultAirport);
+    };
+    void bootstrap();
+  }, []);
+
+  useEffect(() => {
+    if (!airport) return;
+
     const load = async () => {
       try {
         setError(null);
@@ -99,32 +110,40 @@ export default function CompetitionIntelPage() {
         </section>
       ) : null}
 
-      {airportInsights && airportInsights.insights.length > 0 ? (
+      {airportInsights ? (
         <section className="panel">
           <h2>Airport insight cards</h2>
-          <div className="route-grid mt-4">
-            {airportInsights.insights.map((insight, idx) => (
-              <article className="route-card" key={`${insight.insight_label}-${idx}`}>
-                <h3>{insight.insight_label}</h3>
-                <p>{insight.explanation}</p>
-                <p className="muted">Confidence: {insight.confidence}</p>
-              </article>
-            ))}
-          </div>
+          {airportInsights.insights.length > 0 ? (
+            <div className="route-grid mt-4">
+              {airportInsights.insights.map((insight, idx) => (
+                <article className="route-card" key={`${insight.insight_label}-${idx}`}>
+                  <h3>{insight.insight_label}</h3>
+                  <p>{insight.explanation}</p>
+                  <p className="muted">Confidence: {insight.confidence}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="muted mt-4">Airport found, but no airport-level insights met publication thresholds for this slice.</p>
+          )}
         </section>
       ) : null}
 
-      {airportData?.metrics ? (
+      {airportData ? (
         <section className="panel">
           <h2>Airport competition profile</h2>
-          <dl className="kv-grid mt-4">
-            <div><dt>Label</dt><dd>{airportData.metrics.competition_label}</dd></div>
-            <div><dt>Active carriers</dt><dd>{airportData.metrics.active_carriers}</dd></div>
-            <div><dt>Dominant share</dt><dd>{formatPercent(airportData.metrics.dominant_carrier_share)}</dd></div>
-            <div><dt>Concentration HHI</dt><dd>{airportData.metrics.carrier_concentration_hhi.toFixed(1)}</dd></div>
-            <div><dt>Contested route share</dt><dd>{formatPercent(airportData.metrics.contested_route_share)}</dd></div>
-            <div><dt>Confidence</dt><dd>{airportData.metrics.confidence}</dd></div>
-          </dl>
+          {airportData.metrics ? (
+            <dl className="kv-grid mt-4">
+              <div><dt>Label</dt><dd>{airportData.metrics.competition_label}</dd></div>
+              <div><dt>Active carriers</dt><dd>{airportData.metrics.active_carriers}</dd></div>
+              <div><dt>Dominant share</dt><dd>{formatPercent(airportData.metrics.dominant_carrier_share)}</dd></div>
+              <div><dt>Concentration HHI</dt><dd>{airportData.metrics.carrier_concentration_hhi.toFixed(1)}</dd></div>
+              <div><dt>Contested route share</dt><dd>{formatPercent(airportData.metrics.contested_route_share)}</dd></div>
+              <div><dt>Confidence</dt><dd>{airportData.metrics.confidence}</dd></div>
+            </dl>
+          ) : (
+            <p className="muted mt-4">Airport found, but airport-level competition metrics are unavailable for the loaded slice.</p>
+          )}
         </section>
       ) : null}
 
