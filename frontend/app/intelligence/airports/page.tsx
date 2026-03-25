@@ -5,14 +5,25 @@ import { useEffect, useMemo, useState } from "react";
 import { MetadataNotice } from "@/components/MetadataNotice";
 import { AirportPeersResponse, AirportRoleResponse, getAirportPeers, getAirportRole } from "@/lib/api";
 import { formatPercent } from "@/lib/format";
+import { resolveAirportDefaults } from "@/lib/airport-defaults";
 
 export default function AirportRoleIntelPage() {
-  const [iata, setIata] = useState("JFK");
+  const [iata, setIata] = useState("");
   const [role, setRole] = useState<AirportRoleResponse | null>(null);
   const [peers, setPeers] = useState<AirportPeersResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const bootstrap = async () => {
+      const defaults = await resolveAirportDefaults();
+      setIata(defaults.defaultAirport);
+    };
+    void bootstrap();
+  }, []);
+
+  useEffect(() => {
+    if (!iata) return;
+
     const load = async () => {
       try {
         setError(null);

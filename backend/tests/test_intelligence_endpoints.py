@@ -417,3 +417,29 @@ def test_sparse_single_carrier_competition_case(monkeypatch, tmp_path: Path) -> 
     airport_comp = service.airport_competition("JFK")
     assert airport_comp.metrics is not None
     assert airport_comp.metrics.competition_label == "single_carrier_dominant"
+
+
+def test_airport_role_returns_404_for_unknown_airport(monkeypatch, tmp_path: Path) -> None:
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "database_url", None)
+    monkeypatch.setattr(settings, "use_csv_fallback", True)
+
+    marts = tmp_path / "marts"
+    marts.mkdir(parents=True, exist_ok=True)
+
+    _write_csv(
+        marts / "airport_role_metrics.csv",
+        ["iata", "year", "month", "outbound_routes", "destination_diversity_index", "carrier_concentration_hhi", "dominant_carrier_share", "role_label"],
+        [["ATL", 2026, 1, 70, 4.2, 1650, 0.29, "multi_carrier_hub"]],
+    )
+
+    service = AnalyticsService(repository=AnalyticsRepository())
+    service.repository.marts_dir = marts
+    intelligence.service = service
+
+    client = TestClient(app)
+    response = client.get("/intelligence/airports/ZZZ/role")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Airport not found."

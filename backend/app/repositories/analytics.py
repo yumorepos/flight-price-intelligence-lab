@@ -1,11 +1,21 @@
 import csv
 from pathlib import Path
+from typing import Iterable
 
 from app.core.config import settings
 from app.core.db import DatabaseUnavailableError
 
 
 class AnalyticsRepository:
+
+    CSV_AIRPORT_UNIVERSE_FILES = (
+        "route_scores.csv",
+        "monthly_fares.csv",
+        "route_competition_metrics.csv",
+        "airport_role_metrics.csv",
+        "airport_competition_metrics.csv",
+    )
+
     """Analytics read repository.
 
     Runtime behavior:
@@ -64,6 +74,41 @@ class AnalyticsRepository:
             "country": "US",
         }
 
+    @staticmethod
+    def _normalize_iata(raw: str | None) -> str | None:
+        value = (raw or "").strip().upper()
+        if len(value) != 3 or not value.isalpha():
+            return None
+        return value
+
+    def _iter_route_iatas(self, row: dict) -> Iterable[str]:
+        route_key = row.get("route_key", "")
+        if "-" in route_key:
+            origin, destination = route_key.split("-", 1)
+            normalized_origin = self._normalize_iata(origin)
+            normalized_destination = self._normalize_iata(destination)
+            if normalized_origin:
+                yield normalized_origin
+            if normalized_destination:
+                yield normalized_destination
+
+        for column in ("origin_iata", "destination_iata"):
+            normalized = self._normalize_iata(row.get(column))
+            if normalized:
+                yield normalized
+
+    def _csv_airport_universe(self) -> set[str]:
+        iatas: set[str] = set()
+        for filename in self.CSV_AIRPORT_UNIVERSE_FILES:
+            for row in self._read_csv(filename):
+                if "route" in filename:
+                    iatas.update(self._iter_route_iatas(row))
+                    continue
+                normalized = self._normalize_iata(row.get("iata"))
+                if normalized:
+                    iatas.add(normalized)
+        return iatas
+
     def search_airports(self, query: str, limit: int = 10) -> list[dict]:
         self._guard_data_access()
 
@@ -85,16 +130,13 @@ class AnalyticsRepository:
                 (q, q, q, limit),
             )
 
-        scores = self._read_csv("route_scores.csv")
-        fares = self._read_csv("monthly_fares.csv")
-        iatas = set()
-        for row in [*scores, *fares]:
-            route_key = row.get("route_key", "")
-            if "-" in route_key:
-                origin, destination = route_key.split("-", 1)
-                iatas.add(origin)
-                iatas.add(destination)
-        results = [self._airport_from_iata(iata) for iata in sorted(iatas) if query in iata]
+        normalized_query = query.strip().upper()
+        iatas = self._csv_airport_universe()
+        results = [
+            self._airport_from_iata(iata)
+            for iata in sorted(iatas)
+            if not normalized_query or normalized_query in iata
+        ]
         return results[:limit]
 
     def get_route_explorer(self, origin_iata: str, limit: int = 25) -> list[dict]:
@@ -372,11 +414,16 @@ class AnalyticsRepository:
                 "related_routes": related_routes,
             }
 
-        explore = self.get_route_explorer(origin_iata=iata, limit=5)
-        search = self.search_airports(query=iata, limit=1)
-        if not search and not explore:
+        normalized_iata = self._normalize_iata(iata)
+        if normalized_iata is None:
             return None
-        airport = search[0] if search else self._airport_from_iata(iata)
+
+        explore = self.get_route_explorer(origin_iata=normalized_iata, limit=5)
+        airport_known = normalized_iata in self._csv_airport_universe()
+        if not airport_known and not explore:
+            return None
+
+        airport = self._airport_from_iata(normalized_iata)
         return {"airport": airport, "enplanement": None, "related_routes": explore}
 
 

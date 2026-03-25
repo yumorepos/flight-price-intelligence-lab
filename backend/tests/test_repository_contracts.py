@@ -87,3 +87,64 @@ def test_repository_db_error_raises_unavailable(monkeypatch) -> None:
         assert False, "expected DatabaseUnavailableError"
     except DatabaseUnavailableError as exc:
         assert "simulated db failure" in str(exc)
+
+
+def test_csv_airport_context_resolves_from_airport_role_metrics(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(settings, "database_url", None)
+    monkeypatch.setattr(settings, "use_csv_fallback", True)
+
+    marts = tmp_path / "marts"
+    marts.mkdir(parents=True, exist_ok=True)
+
+    _write_csv(
+        marts / "airport_role_metrics.csv",
+        ["iata", "year", "month", "outbound_routes", "destination_diversity_index", "carrier_concentration_hhi", "dominant_carrier_share", "role_label"],
+        [["BOS", 2026, 1, 20, 3.04, 2100, 0.47, "focused_regional_hub"]],
+    )
+
+    repo = AnalyticsRepository()
+    repo.marts_dir = marts
+
+    context = repo.get_airport_context("BOS")
+    assert context is not None
+    assert context["airport"]["iata"] == "BOS"
+
+
+def test_csv_airport_context_resolves_from_airport_competition_metrics(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(settings, "database_url", None)
+    monkeypatch.setattr(settings, "use_csv_fallback", True)
+
+    marts = tmp_path / "marts"
+    marts.mkdir(parents=True, exist_ok=True)
+
+    _write_csv(
+        marts / "airport_competition_metrics.csv",
+        ["iata", "year", "month", "active_outbound_routes", "active_carriers", "dominant_carrier_share", "carrier_concentration_hhi", "contested_route_count", "monopoly_route_count", "contested_route_share", "competition_label", "confidence", "flights_observed"],
+        [["PHX", 2026, 1, 30, 6, 0.38, 1800.0, 14, 6, 0.46, "competitive_but_concentrated", "medium", 250]],
+    )
+
+    repo = AnalyticsRepository()
+    repo.marts_dir = marts
+
+    context = repo.get_airport_context("PHX")
+    assert context is not None
+    assert context["airport"]["iata"] == "PHX"
+
+
+def test_csv_airport_context_unknown_still_returns_none(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(settings, "database_url", None)
+    monkeypatch.setattr(settings, "use_csv_fallback", True)
+
+    marts = tmp_path / "marts"
+    marts.mkdir(parents=True, exist_ok=True)
+
+    _write_csv(
+        marts / "airport_role_metrics.csv",
+        ["iata", "year", "month", "outbound_routes", "destination_diversity_index", "carrier_concentration_hhi", "dominant_carrier_share", "role_label"],
+        [["ATL", 2026, 1, 75, 4.33, 1700, 0.31, "multi_carrier_hub"]],
+    )
+
+    repo = AnalyticsRepository()
+    repo.marts_dir = marts
+
+    assert repo.get_airport_context("ZZZ") is None

@@ -3,16 +3,27 @@
 import { useEffect, useState } from "react";
 import { MetadataNotice } from "@/components/MetadataNotice";
 import { AirportContextResponse, getAirportContext } from "@/lib/api";
+import { resolveAirportDefaults } from "@/lib/airport-defaults";
 import { formatLocation } from "@/lib/format";
 
-const AIRPORTS = ["JFK", "LAX", "ATL", "DFW", "SFO"];
-
 export default function AirportIntelligencePage() {
-  const [selected, setSelected] = useState("JFK");
+  const [selected, setSelected] = useState("");
+  const [airportOptions, setAirportOptions] = useState<string[]>([]);
   const [data, setData] = useState<AirportContextResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const bootstrap = async () => {
+      const defaults = await resolveAirportDefaults();
+      setAirportOptions(defaults.airports);
+      setSelected(defaults.defaultAirport);
+    };
+    void bootstrap();
+  }, []);
+
+  useEffect(() => {
+    if (!selected) return;
+
     const load = async () => {
       try {
         setError(null);
@@ -42,7 +53,7 @@ export default function AirportIntelligencePage() {
       <section className="panel">
         <h2>Select airport</h2>
         <div className="flex flex-wrap gap-2 mt-4">
-          {AIRPORTS.map((iata) => (
+          {airportOptions.map((iata) => (
             <button key={iata} type="button" className={`airport-button ${selected === iata ? "selected" : ""}`} onClick={() => setSelected(iata)}>
               {iata}
             </button>
