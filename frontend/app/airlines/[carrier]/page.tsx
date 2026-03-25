@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { AirlineIdentity } from "@/components/AirlineIdentity";
 import { MetadataNotice } from "@/components/MetadataNotice";
 import { SimpleLineChart } from "@/components/SimpleLineChart";
 import { AirlineDetailResponse, getAirlineDetail } from "@/lib/api";
@@ -61,7 +62,7 @@ export default function AirlineDetailPage({ params }: Props) {
 
           <section className="panel">
             <h2>
-              {data.carrier_code} · {data.airline_name}
+              <AirlineIdentity carrierCode={data.carrier_code} airlineName={data.airline_name} />
             </h2>
             <p className="muted">Route-level drilldown with monthly trend aggregation.</p>
           </section>
@@ -76,8 +77,9 @@ export default function AirlineDetailPage({ params }: Props) {
             <div className="route-grid">
               {data.routes.map((route) => (
                 <article className="route-card" key={`${route.origin}-${route.destination}`}>
-                  <h3>
-                    {route.origin} → {route.destination}
+                  <h3 className="flex items-center justify-between gap-3">
+                    <span>{route.origin} → {route.destination}</span>
+                    <AirlineIdentity carrierCode={data.carrier_code} compact showName={false} />
                   </h3>
                   <p>Route score: {route.route_score}</p>
                   <p>Latest fare: {formatCurrency(route.latest_fare)}</p>

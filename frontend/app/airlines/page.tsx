@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AirlineIdentity } from "@/components/AirlineIdentity";
 import { MetadataNotice } from "@/components/MetadataNotice";
 import { AirlineOverviewResponse, getAirlineOverview } from "@/lib/api";
 import { formatPercent } from "@/lib/format";
@@ -56,7 +57,11 @@ export default function AirlinesPage() {
                 <tbody>
                   {data.airlines.map((airline) => (
                     <tr key={airline.carrier_code}>
-                      <td className="font-semibold"><Link href={`/airlines/${airline.carrier_code}`} className="text-orange-700 hover:underline">{airline.carrier_code} · {airline.airline_name}</Link></td>
+                      <td className="font-semibold">
+                        <Link href={`/airlines/${airline.carrier_code}`} className="text-orange-700 hover:underline">
+                          <AirlineIdentity carrierCode={airline.carrier_code} airlineName={airline.airline_name} compact />
+                        </Link>
+                      </td>
                       <td>{airline.route_count}</td>
                       <td>{airline.avg_route_score}</td>
                       <td>{formatPercent(airline.avg_ontime_rate)}</td>
