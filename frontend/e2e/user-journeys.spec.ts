@@ -11,7 +11,8 @@ test("price intelligence journey: homepage to route detail", async ({ page }) =>
   const routeAnalysisLink = page.getByRole("link", { name: /View Full Analysis/i }).first();
   await expect(routeAnalysisLink).toBeVisible();
   await routeAnalysisLink.click();
-  await expect(page.getByText("Route intelligence brief")).toBeVisible();
+  await expect(page).toHaveURL(/\/routes\/[A-Z]{3}\/[A-Z]{3}$/i);
+  await expect(page.getByTestId("route-page")).toBeVisible();
 });
 
 test("airline intelligence journey: overview to carrier drilldown", async ({ page }) => {
