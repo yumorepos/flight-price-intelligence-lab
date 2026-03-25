@@ -60,14 +60,15 @@ Set these exact values for Production/Preview in Vercel:
 - `USE_BACKEND_PROXY=true`
 
 How this repo resolves requests with those values:
-- Browser-backed intelligence pages use `/api/*` when `USE_BACKEND_PROXY=true`.
-- Vercel rewrites `/api/:path*` to `${BACKEND_URL}/:path*`.
-- This removes browser localhost fallbacks and avoids mixed direct/proxy routing in production.
+- Backend-backed intelligence pages use `/api/*` when `USE_BACKEND_PROXY=true`.
+- Demo modules continue to use local Next API routes under `/api/*` to preserve demo data behavior.
+- Vercel rewrites `/api/:path*` to `${BACKEND_URL}/:path*` for backend-connected traffic.
 
 Notes:
-- With `USE_BACKEND_PROXY=true`, browser-side requests resolve to `/api/*` for deterministic proxying.
-- If `USE_BACKEND_PROXY` is not true, browser-side requests use `NEXT_PUBLIC_API_BASE_URL`.
-- `BACKEND_URL` configures where `/api/*` is proxied upstream.
+- With `USE_BACKEND_PROXY=true`, backend-backed intelligence requests resolve to `/api/*` for deterministic proxying.
+- Demo-only modules intentionally remain on frontend `/api/*` mock routes.
+- If `USE_BACKEND_PROXY` is not true, backend-backed requests use `NEXT_PUBLIC_API_BASE_URL`.
+- `BACKEND_URL` configures where proxied backend-connected `/api/*` traffic is sent upstream.
 
 ---
 
