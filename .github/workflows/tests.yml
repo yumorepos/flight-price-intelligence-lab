@@ -127,9 +127,11 @@ jobs:
         working-directory: ./frontend
         run: npm run test:api-contracts
 
-      - name: Install Playwright browser
+      - name: Install Playwright browsers (including headless shell)
         working-directory: ./frontend
-        run: npx playwright install --with-deps chromium
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+        run: npx playwright install --with-deps
 
       - name: Run UI E2E tests
         working-directory: ./frontend
