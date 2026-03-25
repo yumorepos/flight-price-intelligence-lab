@@ -1,3 +1,5 @@
+import { getDefaultBackendHint, resolveApiBaseUrl } from "@/lib/api-base";
+
 export type DataProvenance = {
   data_source: string;
   is_fallback: boolean;
@@ -351,10 +353,11 @@ export type RouteInsightTimelineResponse = {
   };
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+const API_BASE_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL, process.env.NODE_ENV);
 
 function withApiHint(detail: string): string {
-  return `${detail} Verify the backend is running and reachable (default: http://localhost:8000).`;
+  const defaultBackend = getDefaultBackendHint(process.env.NODE_ENV);
+  return `${detail} Verify the backend is running and reachable (default: ${defaultBackend}).`;
 }
 
 function formatErrorDetail(detail: unknown, fallback: string): string {
