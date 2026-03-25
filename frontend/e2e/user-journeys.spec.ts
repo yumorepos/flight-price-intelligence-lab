@@ -11,7 +11,8 @@ test("price intelligence journey: homepage to route detail", async ({ page }) =>
   const routeAnalysisLink = page.getByRole("link", { name: /View Full Analysis/i }).first();
   await expect(routeAnalysisLink).toBeVisible();
   await routeAnalysisLink.click();
-  await expect(page.getByText("Route intelligence brief")).toBeVisible();
+  await expect(page).toHaveURL(/\/routes\/[A-Z]{3}\/[A-Z]{3}$/i);
+  await expect(page.getByTestId("route-page")).toBeVisible();
 });
 
 test("airline intelligence journey: overview to carrier drilldown", async ({ page }) => {
@@ -28,16 +29,16 @@ test("airline intelligence journey: overview to carrier drilldown", async ({ pag
 
 test("network journey: geospatial route map contract", async ({ page }) => {
   await page.goto("/network");
-  await expect(page.getByRole("heading", { name: "Geospatial route map" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Network map explorer/i })).toBeVisible();
   await expect(page.getByText(/Demo-only surface/i)).toBeVisible();
 
-  const mapPanelHeading = page.getByRole("heading", { name: "U.S. route map (demo projection)" });
+  const mapPanelHeading = page.getByRole("heading", { name: /U\.S\. network snapshot/i });
   const networkError = page.getByText(/Network error:/i);
 
   await expect(mapPanelHeading.or(networkError)).toBeVisible();
 
   if (await mapPanelHeading.isVisible()) {
-    await expect(page.getByText(/Line thickness\/opacity scales with route score/i)).toBeVisible();
+    await expect(page.getByText(/Curved edges show route links/i)).toBeVisible();
   }
 });
 
@@ -50,5 +51,5 @@ test("flagship wedge route changes page is backend-dependent and truth-labeled",
 test("competition intelligence page reuses airport insight experience", async ({ page }) => {
   await page.goto("/intelligence/competition");
   await expect(page).toHaveURL(/\/intelligence\/competition$/);
-  await expect(page.getByRole("heading", { name: "Airport insight engine" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Airport insight engine/i })).toBeVisible();
 });

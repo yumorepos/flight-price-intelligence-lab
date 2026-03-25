@@ -69,7 +69,7 @@ export default function RouteDetailPage({ params }: Props) {
   );
 
   return (
-    <main className="page-shell">
+    <main className="page-shell" data-testid="route-page">
       <Link href="/" className="back-link">
         ← Back to Route Explorer
       </Link>

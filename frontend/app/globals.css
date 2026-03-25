@@ -308,6 +308,31 @@
     @apply inline-flex items-center rounded-md bg-orange-100 text-orange-800 px-2 py-0.5 text-xs font-semibold;
   }
 
+  .airline-identity {
+    @apply inline-flex items-center gap-2 text-sm;
+  }
+
+  .airline-identity.compact {
+    @apply gap-1.5 text-xs;
+  }
+
+  .airline-mark {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-full text-white font-bold text-xs shadow-sm ring-1 ring-black/10;
+  }
+
+  .airline-identity.compact .airline-mark {
+    @apply h-6 w-6 text-[10px];
+  }
+
+  .airline-code {
+    @apply block text-gray-900 leading-none;
+  }
+
+  .airline-name {
+    @apply block text-xs text-gray-600;
+  }
+
+
   /* Loading States */
   .loading-pulse {
     @apply animate-pulse bg-gray-200 rounded;
