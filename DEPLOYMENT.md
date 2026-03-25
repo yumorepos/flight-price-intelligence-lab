@@ -53,9 +53,22 @@ A `render.yaml` blueprint is included at repo root and points to the same comman
 - `BACKEND_URL=https://<your-backend-host>`
 - `USE_BACKEND_PROXY=true`
 
+### Project-specific Vercel env values (avgeek-intelligence-lab)
+Set these exact values for Production/Preview in Vercel:
+- `NEXT_PUBLIC_API_BASE_URL=https://avgeek-intelligence-lab.onrender.com`
+- `BACKEND_URL=https://avgeek-intelligence-lab.onrender.com`
+- `USE_BACKEND_PROXY=true`
+
+How this repo resolves requests with those values:
+- Backend-backed intelligence pages use `/api/*` when `USE_BACKEND_PROXY=true`.
+- Demo modules continue to use local Next API routes under `/api/*` to preserve demo data behavior.
+- Vercel rewrites `/api/:path*` to `${BACKEND_URL}/:path*` for backend-connected traffic.
+
 Notes:
-- `NEXT_PUBLIC_API_BASE_URL` is used by browser-side requests.
-- `BACKEND_URL` + `USE_BACKEND_PROXY=true` enables Next route-handler proxying for `/api/*` backend endpoints.
+- With `USE_BACKEND_PROXY=true`, backend-backed intelligence requests resolve to `/api/*` for deterministic proxying.
+- Demo-only modules intentionally remain on frontend `/api/*` mock routes.
+- If `USE_BACKEND_PROXY` is not true, backend-backed requests use `NEXT_PUBLIC_API_BASE_URL`.
+- `BACKEND_URL` configures where proxied backend-connected `/api/*` traffic is sent upstream.
 
 ---
 
@@ -81,3 +94,13 @@ Notes:
 - Root `vercel.json` overrides for frontend-only deployment
 - Root npm workspace manifests for Vercel build path
 - Conflicting deployment docs with different env names
+
+## 5) Focused live verification for intelligence pages/proxy
+   - `cd frontend && FRONTEND_BASE=https://avgeek-intelligence-lab.vercel.app npm run verify:deployment`
+   - Script validates:
+     - `/intelligence/airports?airport=JFK`
+     - `/intelligence/competition?airport=JFK`
+     - `/intelligence/route-changes?airport=JFK`
+     - `/api/intelligence/routes/insights?airport_iata=JFK&limit=5`
+     - `/api/intelligence/airports/JFK/role`
+   - Fails if responses still include localhost hints or backend-only proxy errors

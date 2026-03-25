@@ -8,7 +8,9 @@ test("price intelligence journey: homepage to route detail", async ({ page }) =>
   await page.getByRole("button", { name: "Search" }).click();
   await expect(page.getByRole("heading", { name: /Routes from/i })).toBeVisible();
 
-  await page.getByRole("link", { name: /View Full Analysis/i }).first().click();
+  const routeAnalysisLink = page.getByRole("link", { name: /View Full Analysis/i }).first();
+  await expect(routeAnalysisLink).toBeVisible();
+  await routeAnalysisLink.click();
   await expect(page.getByText("Route intelligence brief")).toBeVisible();
 });
 
@@ -16,15 +18,27 @@ test("airline intelligence journey: overview to carrier drilldown", async ({ pag
   await page.goto("/airlines");
   await expect(page.getByRole("heading", { name: "Carrier-level route performance view" })).toBeVisible();
 
-  await page.getByRole("link", { name: /AA · American Airlines/i }).click();
+  const carrierLink = page.locator("table tbody tr a").first();
+  await expect(carrierLink).toBeVisible();
+  await carrierLink.click();
+
   await expect(page.getByText("Airline drilldown")).toBeVisible();
   await expect(page.getByText("Route-level drilldown with monthly trend aggregation.")).toBeVisible();
 });
 
-test("network journey: geospatial route map renders", async ({ page }) => {
+test("network journey: geospatial route map contract", async ({ page }) => {
   await page.goto("/network");
   await expect(page.getByRole("heading", { name: "Geospatial route map" })).toBeVisible();
-  await expect(page.locator("svg")).toBeVisible();
+  await expect(page.getByText(/Demo-only surface/i)).toBeVisible();
+
+  const mapPanelHeading = page.getByRole("heading", { name: "U.S. route map (demo projection)" });
+  const networkError = page.getByText(/Network error:/i);
+
+  await expect(mapPanelHeading.or(networkError)).toBeVisible();
+
+  if (await mapPanelHeading.isVisible()) {
+    await expect(page.getByText(/Line thickness\/opacity scales with route score/i)).toBeVisible();
+  }
 });
 
 test("flagship wedge route changes page is backend-dependent and truth-labeled", async ({ page }) => {

@@ -1,3 +1,5 @@
+import { getDefaultBackendHint, resolveDemoApiBaseUrl, resolveIntelligenceApiBaseUrl } from "@/lib/api-base";
+
 export type DataProvenance = {
   data_source: string;
   is_fallback: boolean;
@@ -351,10 +353,23 @@ export type RouteInsightTimelineResponse = {
   };
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+const DEMO_API_BASE_URL = resolveDemoApiBaseUrl();
+const INTELLIGENCE_API_BASE_URL = resolveIntelligenceApiBaseUrl({
+  envValue: process.env.NEXT_PUBLIC_API_BASE_URL,
+  nodeEnv: process.env.NODE_ENV,
+  useBackendProxy: process.env.NEXT_PUBLIC_USE_BACKEND_PROXY,
+});
 
-function withApiHint(detail: string): string {
-  return `${detail} Verify the backend is running and reachable (default: http://localhost:8000).`;
+function withBackendHint(detail: string): string {
+  const defaultBackend = getDefaultBackendHint({
+    nodeEnv: process.env.NODE_ENV,
+    useBackendProxy: process.env.NEXT_PUBLIC_USE_BACKEND_PROXY,
+  });
+  return `${detail} Verify the backend is running and reachable (default: ${defaultBackend}).`;
+}
+
+function withDemoHint(detail: string): string {
+  return `${detail} Verify the frontend API routes are reachable under ${DEMO_API_BASE_URL}.`;
 }
 
 function formatErrorDetail(detail: unknown, fallback: string): string {
@@ -400,13 +415,13 @@ function formatErrorDetail(detail: unknown, fallback: string): string {
   return fallback;
 }
 
-async function apiFetch<T>(path: string): Promise<T> {
+async function apiFetch<T>(path: string, options: { baseUrl: string; hint: (detail: string) => string }): Promise<T> {
   let response: Response;
 
   try {
-    response = await fetch(`${API_BASE_URL}${path}`);
+    response = await fetch(`${options.baseUrl}${path}`);
   } catch {
-    throw new Error(withApiHint("Unable to reach the API service."));
+    throw new Error(options.hint("Unable to reach the API service."));
   }
 
   if (!response.ok) {
@@ -420,53 +435,61 @@ async function apiFetch<T>(path: string): Promise<T> {
       detail = fallbackError;
     }
 
-    throw new Error(withApiHint(detail));
+    throw new Error(options.hint(detail));
   }
 
   return (await response.json()) as T;
 }
 
+function fetchDemo<T>(path: string): Promise<T> {
+  return apiFetch(path, { baseUrl: DEMO_API_BASE_URL, hint: withDemoHint });
+}
+
+function fetchIntelligence<T>(path: string): Promise<T> {
+  return apiFetch(path, { baseUrl: INTELLIGENCE_API_BASE_URL, hint: withBackendHint });
+}
+
 export function searchAirports(query: string): Promise<AirportSearchResponse> {
-  return apiFetch(`/airports/search?q=${encodeURIComponent(query)}`);
+  return fetchDemo(`/airports/search?q=${encodeURIComponent(query)}`);
 }
 
 export function exploreRoutes(origin: string): Promise<RouteExploreResponse> {
-  return apiFetch(`/routes/explore?origin=${encodeURIComponent(origin)}`);
+  return fetchDemo(`/routes/explore?origin=${encodeURIComponent(origin)}`);
 }
 
 export function getRouteDetail(origin: string, destination: string): Promise<RouteDetailResponse> {
-  return apiFetch(`/routes/${encodeURIComponent(origin)}/${encodeURIComponent(destination)}`);
+  return fetchDemo(`/routes/${encodeURIComponent(origin)}/${encodeURIComponent(destination)}`);
 }
 
 export function getAirportContext(iata: string): Promise<AirportContextResponse> {
-  return apiFetch(`/airports/${encodeURIComponent(iata)}/context`);
+  return fetchDemo(`/airports/${encodeURIComponent(iata)}/context`);
 }
 
 export function getMethodology(): Promise<MethodologyResponse> {
-  return apiFetch("/meta/methodology");
+  return fetchDemo("/meta/methodology");
 }
 
 
 export function getNetworkHubs(): Promise<NetworkHubResponse> {
-  return apiFetch("/network/hubs");
+  return fetchDemo("/network/hubs");
 }
 
 export function getSeasonalityIndex(): Promise<SeasonalityResponse> {
-  return apiFetch("/seasonality/index");
+  return fetchDemo("/seasonality/index");
 }
 
 
 export function getAirlineOverview(): Promise<AirlineOverviewResponse> {
-  return apiFetch("/airlines/overview");
+  return fetchDemo("/airlines/overview");
 }
 
 export function getNetworkGeo(): Promise<NetworkGeoResponse> {
-  return apiFetch("/network/geo");
+  return fetchDemo("/network/geo");
 }
 
 
 export function getAirlineDetail(carrier: string): Promise<AirlineDetailResponse> {
-  return apiFetch(`/airlines/${encodeURIComponent(carrier)}/detail`);
+  return fetchDemo(`/airlines/${encodeURIComponent(carrier)}/detail`);
 }
 
 export function getRouteChanges(params: {
@@ -484,15 +507,15 @@ export function getRouteChanges(params: {
   if (params.month) q.set("month", String(params.month));
   if (params.change_type) q.set("change_type", params.change_type);
   if (params.limit) q.set("limit", String(params.limit));
-  return apiFetch(`/intelligence/routes/changes?${q.toString()}`);
+  return fetchIntelligence(`/intelligence/routes/changes?${q.toString()}`);
 }
 
 export function getAirportRole(iata: string): Promise<AirportRoleResponse> {
-  return apiFetch(`/intelligence/airports/${encodeURIComponent(iata)}/role`);
+  return fetchIntelligence(`/intelligence/airports/${encodeURIComponent(iata)}/role`);
 }
 
 export function getAirportPeers(iata: string, limit = 5): Promise<AirportPeersResponse> {
-  return apiFetch(`/intelligence/airports/${encodeURIComponent(iata)}/peers?limit=${limit}`);
+  return fetchIntelligence(`/intelligence/airports/${encodeURIComponent(iata)}/peers?limit=${limit}`);
 }
 
 export function getRouteCompetition(params: {
@@ -510,11 +533,11 @@ export function getRouteCompetition(params: {
   if (params.year) q.set("year", String(params.year));
   if (params.month) q.set("month", String(params.month));
   if (params.limit) q.set("limit", String(params.limit));
-  return apiFetch(`/intelligence/routes/competition?${q.toString()}`);
+  return fetchIntelligence(`/intelligence/routes/competition?${q.toString()}`);
 }
 
 export function getAirportCompetition(iata: string): Promise<AirportCompetitionResponse> {
-  return apiFetch(`/intelligence/airports/${encodeURIComponent(iata)}/competition`);
+  return fetchIntelligence(`/intelligence/airports/${encodeURIComponent(iata)}/competition`);
 }
 
 export function getRouteInsights(params: {
@@ -528,19 +551,19 @@ export function getRouteInsights(params: {
   if (params.origin_iata) q.set("origin_iata", params.origin_iata);
   if (params.destination_iata) q.set("destination_iata", params.destination_iata);
   if (params.limit) q.set("limit", String(params.limit));
-  return apiFetch(`/intelligence/routes/insights?${q.toString()}`);
+  return fetchIntelligence(`/intelligence/routes/insights?${q.toString()}`);
 }
 
 export function getAirportInsights(iata: string): Promise<AirportInsightsResponse> {
-  return apiFetch(`/intelligence/airports/${encodeURIComponent(iata)}/insights`);
+  return fetchIntelligence(`/intelligence/airports/${encodeURIComponent(iata)}/insights`);
 }
 
 export function getInsightQuality(): Promise<InsightQualityResponse> {
-  return apiFetch("/meta/insight-quality");
+  return fetchIntelligence("/meta/insight-quality");
 }
 
 export function getRouteInsightTimeline(origin: string, destination: string, periods = 12): Promise<RouteInsightTimelineResponse> {
-  return apiFetch(
+  return fetchIntelligence(
     `/intelligence/routes/${encodeURIComponent(origin)}/${encodeURIComponent(destination)}/insight-timeline?periods=${periods}`,
   );
 }
