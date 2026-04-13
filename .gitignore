@@ -31,4 +31,11 @@ data/marts/*
 # Logs
 *.log
 
-dist/
+dist/*.pyc
+.env.*
+!.env.example
+*.db
+*.sqlite3
+*.bak
+*.backup
+*.old
